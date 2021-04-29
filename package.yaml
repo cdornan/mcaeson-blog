@@ -37,8 +37,8 @@ library:
   source-dirs: src
 
 executables:
-  data-blog:
-    main:          data-blog.hs
+  mcaeson-blog:
+    main:          mcaeson-blog.hs
     source-dirs:   app
     ghc-options:
     - -threaded
