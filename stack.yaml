@@ -7,11 +7,16 @@ flags:
   hlibsass:
     externallibsass: true
 
+ghc-options:
+  pandoc: -j8
+  mcaeson: -j8
+
 allow-newer: true
 
 packages:
 - .
 - local/hlibsass
+- ../mcaeson
 
 extra-deps:
 - pandoc-2.13
@@ -23,3 +28,5 @@ extra-deps:
 - enum-text-0.5.2.1
 
 # - hlibsass-0.1.10.1
+
+- vector-0.12.3.0

@@ -4,9 +4,9 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 76a11a9c88888b2d690a83137efe4df735ee567989ed63974c526ccb49c29d29
+-- hash: 26a658e3989b4496f6be98e6ca7a5814b287eb428dab0175897f43067ebe01ae
 
-name:           data-blog
+name:           mcaeson-blog
 version:        0.1.0.0
 synopsis:       mcaeson data blog
 description:    mcaeson blog charting benchmark progress
@@ -37,7 +37,7 @@ library
       DataBlog.Types.Stars
       DataBlog.Types.StructureReviews
   other-modules:
-      Paths_data_blog
+      Paths_mcaeson_blog
   hs-source-dirs:
       src
   ghc-options: -Wall -fwarn-tabs
@@ -63,7 +63,7 @@ library
 executable mcaeson-blog
   main-is: mcaeson-blog.hs
   other-modules:
-      Paths_data_blog
+      Paths_mcaeson_blog
   hs-source-dirs:
       app
   ghc-options: -Wall -fwarn-tabs -threaded
@@ -71,7 +71,6 @@ executable mcaeson-blog
       array
     , base ==4.*
     , containers
-    , data-blog
     , data-default
     , enum-text
     , filepath
@@ -82,6 +81,7 @@ executable mcaeson-blog
     , hashable
     , heredoc
     , hsass
+    , mcaeson-blog
     , text
     , time
     , unordered-containers

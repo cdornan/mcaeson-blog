@@ -1,4 +1,4 @@
-name:                data-blog
+name:                mcaeson-blog
 version:             0.1.0.0
 github:              "mcaeson/data-blog"
 license:             OtherLicense
@@ -43,4 +43,4 @@ executables:
     ghc-options:
     - -threaded
     dependencies:
-    - data-blog
+    - mcaeson-blog
