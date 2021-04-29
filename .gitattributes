@@ -1,7 +1,7 @@
-/assets/**    linguist-vendored
-/favicon/**   linguist-vendored
-/local/**     linguist-vendored
-/pages/**     linguist-vendored
-/posts/**     linguist-vendored
-/templates/** linguist-vendored
-/ukit*/**     linguist-vendored
+/assets/**      linguist-vendored
+/favicon/**     linguist-vendored
+/local/**       linguist-vendored
+/pages/**       linguist-vendored
+/posts/**       linguist-vendored
+/templates/**   linguist-vendored
+/uikit*/**      linguist-vendored
