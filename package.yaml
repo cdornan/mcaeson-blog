@@ -1,0 +1,46 @@
+name:                data-blog
+version:             0.1.0.0
+github:              "mcaeson/data-blog"
+license:             OtherLicense
+author:              "Chris Dornan"
+maintainer:          "chris@chrisdornan.com"
+copyright:           "2021 Chris Dornan"
+
+synopsis:            mcaeson data blog
+category:            Network
+
+description:         mcaeson blog charting benchmark progress
+
+dependencies:
+- base == 4.*
+- array
+- containers
+- data-default
+- enum-text
+- filepath
+- fmt
+- hakyll
+- hakyll-images
+- hakyll-sass
+- heredoc
+- hsass
+- hashable
+- text
+- time
+- unordered-containers
+
+ghc-options:
+- -Wall
+- -fwarn-tabs
+
+library:
+  source-dirs: src
+
+executables:
+  data-blog:
+    main:          data-blog.hs
+    source-dirs:   app
+    ghc-options:
+    - -threaded
+    dependencies:
+    - data-blog

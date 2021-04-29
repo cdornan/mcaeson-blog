@@ -1,0 +1,88 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: a81df005b76c69b53fc2409146dbae72e5f1bf0d93b0a0660c49e402ae2fb473
+
+name:           data-blog
+version:        0.1.0.0
+synopsis:       mcaeson data blog
+description:    mcaeson blog charting benchmark progress
+category:       Network
+homepage:       https://github.com/mcaeson/data-blog#readme
+bug-reports:    https://github.com/mcaeson/data-blog/issues
+author:         Chris Dornan
+maintainer:     chris@chrisdornan.com
+copyright:      2021 Chris Dornan
+license:        OtherLicense
+license-file:   LICENSE
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/mcaeson/data-blog
+
+library
+  exposed-modules:
+      DataBlog
+      DataBlog.Kit.Stars
+      DataBlog.Review
+      DataBlog.Types
+      DataBlog.Types.Basic
+      DataBlog.Types.ExtensionReviews
+      DataBlog.Types.IsSeries
+      DataBlog.Types.PackageReviews
+      DataBlog.Types.Stars
+      DataBlog.Types.StructureReviews
+  other-modules:
+      Paths_data_blog
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -fwarn-tabs
+  build-depends:
+      array
+    , base ==4.*
+    , containers
+    , data-default
+    , enum-text
+    , filepath
+    , fmt
+    , hakyll
+    , hakyll-images
+    , hakyll-sass
+    , hashable
+    , heredoc
+    , hsass
+    , text
+    , time
+    , unordered-containers
+  default-language: Haskell2010
+
+executable data-blog
+  main-is: data-blog.hs
+  other-modules:
+      Paths_data_blog
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -fwarn-tabs -threaded
+  build-depends:
+      array
+    , base ==4.*
+    , containers
+    , data-blog
+    , data-default
+    , enum-text
+    , filepath
+    , fmt
+    , hakyll
+    , hakyll-images
+    , hakyll-sass
+    , hashable
+    , heredoc
+    , hsass
+    , text
+    , time
+    , unordered-containers
+  default-language: Haskell2010

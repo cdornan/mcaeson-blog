@@ -1,0 +1,25 @@
+resolver: lts-17.10
+
+ghc-options:
+  cd-blog: -Werror
+
+flags:
+  hlibsass:
+    externallibsass: true
+
+allow-newer: true
+
+packages:
+- .
+- local/hlibsass
+
+extra-deps:
+- pandoc-2.13
+- pandoc-citeproc-0.17.0.2
+- hakyll-4.14.0.0
+- hakyll-images-1.0.1
+- hakyll-sass-0.2.4
+- hslua-module-path-0.1.0.1
+- enum-text-0.5.2.1
+
+# - hlibsass-0.1.10.1
