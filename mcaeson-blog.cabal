@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 26a658e3989b4496f6be98e6ca7a5814b287eb428dab0175897f43067ebe01ae
+-- hash: 07f07a350ddc49ecf98063e75e6973823cb098655af049264b89eb6a5bb178cc
 
 name:           mcaeson-blog
 version:        0.1.0.0
@@ -58,6 +58,7 @@ library
     , text
     , time
     , unordered-containers
+    , vector
   default-language: Haskell2010
 
 executable mcaeson-blog
@@ -85,4 +86,34 @@ executable mcaeson-blog
     , text
     , time
     , unordered-containers
+    , vector
+  default-language: Haskell2010
+
+executable mcaeson-report
+  main-is: mcaeson-report.hs
+  other-modules:
+      Paths_mcaeson_blog
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -fwarn-tabs -threaded
+  build-depends:
+      array
+    , base ==4.*
+    , containers
+    , data-default
+    , enum-text
+    , filepath
+    , fmt
+    , hakyll
+    , hakyll-images
+    , hakyll-sass
+    , hashable
+    , heredoc
+    , hsass
+    , mcaeson
+    , mcaeson-blog
+    , text
+    , time
+    , unordered-containers
+    , vector
   default-language: Haskell2010
