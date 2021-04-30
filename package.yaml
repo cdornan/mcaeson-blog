@@ -25,6 +25,7 @@ dependencies:
 - heredoc
 - hsass
 - hashable
+- mcaeson
 - text
 - time
 - unordered-containers
@@ -52,4 +53,3 @@ executables:
     - -threaded
     dependencies:
     - mcaeson-blog
-    - mcaeson
