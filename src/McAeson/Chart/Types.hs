@@ -8,7 +8,7 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE StandaloneDeriving        #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 
 module McAeson.Chart.Types where
 
@@ -18,7 +18,7 @@ import qualified Data.List                    as L
 import           Data.Maybe
 import qualified Data.Set                     as Set
 import           Data.Text(Text)
--- import qualified Data.Text      as T
+import qualified Data.Text      as T
 import           Data.Time
 import           Data.Vector(Vector)
 import qualified Data.Vector                  as V
@@ -50,10 +50,11 @@ type Report = [Chart]
 
 data Chart =
   Chart
-    { _c_heading :: Heading
-    , _c_blurb   :: Markdown
-    , _c_series  :: [LabeledQuery]
-    , _c_values  :: [LabeledQuery]
+    { _c_heading  :: Heading
+    , _c_blurb    :: Markdown
+    , _c_universe :: [LabeledQuery]
+    , _c_series   :: [LabeledQuery]
+    , _c_values   :: [LabeledQuery]
     }
   deriving (Show)
 
@@ -86,6 +87,10 @@ data ChartPacket =
   deriving (Show)
 
 
+----------------------------------------------------------------------------------------------------
+-- postReport
+----------------------------------------------------------------------------------------------------
+
 postReport :: Report -> IO ()
 postReport cs = do
     ut  <- getCurrentTime
@@ -116,8 +121,12 @@ extract c = mk <$> mapM gen_series _c_series
         }
 
 
--- renderTable :: ChartData -> Markdown
--- renderTable =
+----------------------------------------------------------------------------------------------------
+-- render_table, render_chart, write_report
+----------------------------------------------------------------------------------------------------
+
+-- render_table :: ChartData -> Markdown
+-- render_table =
 
 render_chart :: UTCTime -> ChartData -> ChartPacket
 render_chart = undefined
@@ -126,6 +135,27 @@ write_report :: UTCTime -> [ChartPacket] -> IO ()
 write_report = undefined
 
 
+----------------------------------------------------------------------------------------------------
+-- test
+----------------------------------------------------------------------------------------------------
+
+test :: IO ()
+test = postReport [test_chart]
+
+test_chart :: Chart
+test_chart =
+  Chart
+    { _c_heading  = "test chart"
+    , _c_blurb    = "functions and algoritms on giga/dt"
+    , _c_universe = me_query (==ME_dt) <> if_query (==IF_giga)
+    , _c_series   = al_query every
+    , _c_values   = fn_query every
+    }
+
+
+----------------------------------------------------------------------------------------------------
+-- QueryDescriptor
+----------------------------------------------------------------------------------------------------
 
 newtype QueryDescriptor =
   QueryDescriptor
@@ -153,24 +183,9 @@ instance IsQuery QueryDescriptor where
         , Just qm <- [f qdl]
         ]
 
-
-
-test :: IO ()
-test = postReport [test_chart]
-
-test_chart :: Chart
-test_chart =
-  Chart
-    { _c_heading = "test chart"
-    , _c_blurb   = "functions and algoritms on giga/dt"
-    , _c_series  = al_query every
-    , _c_values  = fn_query every
-    }
-
-
-
 data QueryDescriptorL
   = QD_installation
+  | QD_machine
   | QD_function
   | QD_algorithm
   | QD_input
@@ -201,6 +216,55 @@ data QueryMethods = forall a . HasQueryMethods a =>
 deriving instance Show QueryMethods
 
 
+----------------------------------------------------------------------------------------------------
+-- Instltn
+----------------------------------------------------------------------------------------------------
+
+data Instltn
+  = IN_dt_8'10'4
+  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
+  deriving anyclass (EnumText, HasQueryMethods)
+  deriving (Buildable, TextParsable)
+    via UsingEnumText Instltn
+
+instance IsBrief Instltn where
+  brief = \case
+    IN_dt_8'10'4 -> "dt8"
+
+instance IsQuery Instltn where
+  mkQuery = undefined
+
+
+----------------------------------------------------------------------------------------------------
+-- Machine
+----------------------------------------------------------------------------------------------------
+
+me_query :: (Machine->Bool) -> [LabeledQuery]
+me_query = gen_labelel_queries QD_machine
+
+data Machine
+  = ME_dt
+  | ME_ford
+  | ME_heartofgold
+  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
+  deriving anyclass (EnumText, HasQueryMethods)
+  deriving (Buildable, TextParsable)
+    via UsingEnumText Machine
+
+instance IsBrief Machine where
+  brief = \case
+    ME_dt          -> "dt"
+    ME_ford        -> "ford"
+    ME_heartofgold -> "hog"
+
+instance IsQuery Machine where
+  mkQuery = undefined
+
+
+----------------------------------------------------------------------------------------------------
+-- Function
+----------------------------------------------------------------------------------------------------
+
 fn_query :: (Function->Bool) -> [LabeledQuery]
 fn_query = gen_labelel_queries QD_function
 
@@ -227,6 +291,10 @@ fn_to_tag fn = case fn of
     FN_simple_json  -> TG_sj
     FN_aeson_value  -> TG_av
 
+
+----------------------------------------------------------------------------------------------------
+-- Algorithm
+----------------------------------------------------------------------------------------------------
 
 al_query :: (Algorithm->Bool) -> [LabeledQuery]
 al_query = gen_labelel_queries QD_algorithm
@@ -257,6 +325,101 @@ al_to_tag = \case
     AL_jsonsimd -> TG_js
 
 
+----------------------------------------------------------------------------------------------------
+-- Compiler
+----------------------------------------------------------------------------------------------------
+
+data Compiler
+  = CR_8'6'5
+  | CR_8'8'1
+  | CR_8'8'2
+  | CR_8'8'3
+  | CR_8'8'4
+  | CR_8'10'1
+  | CR_8'10'2
+  | CR_8'10'3
+  | CR_8'10'4
+  | CR_9'0'1
+  | CR_9'2'1
+  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
+  deriving anyclass (EnumText, HasQueryMethods)
+  deriving (Buildable, TextParsable)
+    via UsingEnumText Compiler
+
+instance IsBrief Compiler where
+  brief = T.filter (/='.') . fmt . build
+
+instance IsQuery Compiler where
+  mkQuery = undefined
+
+
+----------------------------------------------------------------------------------------------------
+-- OS
+----------------------------------------------------------------------------------------------------
+
+data OS
+  = OS_darwin_19'6'0
+  | OS_darwin_20'3'0
+  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
+  deriving anyclass (EnumText, HasQueryMethods)
+  deriving (Buildable, TextParsable)
+    via UsingEnumText OS
+
+instance IsBrief OS where
+  brief = \case
+    OS_darwin_19'6'0 -> "10.15" -- .7 (dt)
+    OS_darwin_20'3'0 -> "11.2"  -- .3 (ford)
+
+instance IsQuery OS where
+  mkQuery = undefined
+
+
+----------------------------------------------------------------------------------------------------
+-- Partitions
+----------------------------------------------------------------------------------------------------
+
+newtype Partitions = Partitions { getPartitions :: Int }
+  deriving stock (Show)
+  deriving newtype (Buildable,Enum,Eq,Ord,Num)
+  deriving anyclass (HasQueryMethods)
+
+instance Bounded Partitions where
+  minBound = 1
+  maxBound = 1000
+
+instance IsBrief Partitions where
+  brief = fmt . build
+
+instance IsQuery Partitions where
+  mkQuery = undefined
+
+
+----------------------------------------------------------------------------------------------------
+-- Workers
+----------------------------------------------------------------------------------------------------
+
+newtype Workers = Workers { getWorkers :: Int }
+  deriving stock (Show)
+  deriving newtype (Buildable,Enum,Eq,Ord,Num)
+  deriving anyclass (HasQueryMethods)
+
+instance Bounded Workers where
+  minBound = 1
+  maxBound = 1000
+
+instance IsBrief Workers where
+  brief = fmt . build
+
+instance IsQuery Workers where
+  mkQuery = undefined
+
+
+----------------------------------------------------------------------------------------------------
+-- InputFile
+----------------------------------------------------------------------------------------------------
+
+if_query :: (InputFile->Bool) -> [LabeledQuery]
+if_query = gen_labelel_queries QD_input
 
 data InputFile
   = IF_giga
@@ -279,10 +442,10 @@ if_to_tag = \case
     IF_large  -> TG_lg
     IF_little -> TG_lt
 
-if_query :: (InputFile->Bool) -> [LabeledQuery]
-if_query = gen_labelel_queries QD_input
 
-
+----------------------------------------------------------------------------------------------------
+-- Output
+----------------------------------------------------------------------------------------------------
 
 data Output
   = OP_min
@@ -317,7 +480,6 @@ calc_output op = case op of
     OP_internal_max  -> calc_op bm_internal_seconds max_1
     OP_internal_mean -> calc_op bm_internal_seconds mean_1
 
-
 calc_op :: (Benchmark->Double) -> (Double->[Double]->Double) -> Vector Benchmark -> Datum
 calc_op ext agg v0 = case V.uncons v0 of
     Nothing        -> NoDatum
@@ -338,6 +500,10 @@ max_1 d ds = L.maximum $ d:ds
 mean_1 :: Double -> [Double] -> Double
 mean_1 d ds = sum (d:ds) / 1 + L.genericLength ds
 
+
+----------------------------------------------------------------------------------------------------
+-- helpers
+----------------------------------------------------------------------------------------------------
 
 tag_to_query :: Tag -> Query
 tag_to_query tg = LENS.set q_tags (Set.fromList [tg]) mempty
