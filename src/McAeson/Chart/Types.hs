@@ -12,15 +12,16 @@
 
 module McAeson.Chart.Types where
 
-import qualified Control.Lens                 as L
+import qualified Control.Lens                 as LENS
 -- import           Control.Monad
+import qualified Data.List                    as L
 import           Data.Maybe
 import qualified Data.Set                     as Set
 import           Data.Text(Text)
 -- import qualified Data.Text      as T
--- import           Data.Time
+import           Data.Time
 import           Data.Vector(Vector)
--- import qualified Data.Vector                as V
+import qualified Data.Vector                  as V
 import           Fmt
 -- import           McAeson.Bench.Renderable
 import           McAeson.Bench.Types
@@ -85,6 +86,14 @@ data ChartPacket =
   deriving (Show)
 
 
+postReport :: Report -> IO ()
+postReport cs = do
+    ut  <- getCurrentTime
+    cps <- mapM (gen ut) cs
+    write_report ut cps
+  where
+    gen :: UTCTime -> Chart -> IO ChartPacket
+    gen ut c = render_chart ut <$> extract c
 
 extract :: Chart -> IO ChartData
 extract c = mk <$> mapM gen_series _c_series
@@ -107,11 +116,14 @@ extract c = mk <$> mapM gen_series _c_series
         }
 
 
-renderTable :: ChartData -> Markdown
-renderTable = undefined
+-- renderTable :: ChartData -> Markdown
+-- renderTable =
 
-renderChart :: ChartData -> ChartPacket
-renderChart = undefined
+render_chart :: UTCTime -> ChartData -> ChartPacket
+render_chart = undefined
+
+write_report :: UTCTime -> [ChartPacket] -> IO ()
+write_report = undefined
 
 
 
@@ -140,6 +152,11 @@ instance IsQuery QueryDescriptor where
         | qdl <- [minBound..maxBound]
         , Just qm <- [f qdl]
         ]
+
+
+
+test :: IO ()
+test = postReport [test_chart]
 
 test_chart :: Chart
 test_chart =
@@ -262,6 +279,9 @@ if_to_tag = \case
     IF_large  -> TG_lg
     IF_little -> TG_lt
 
+if_query :: (InputFile->Bool) -> [LabeledQuery]
+if_query = gen_labelel_queries QD_input
+
 
 
 data Output
@@ -289,16 +309,38 @@ instance IsQuery Output where
   mkQuery = const mempty
 
 calc_output :: Output -> Vector Benchmark -> Datum
-calc_output = undefined
+calc_output op = case op of
+    OP_min           -> calc_op bm_external_seconds min_1
+    OP_max           -> calc_op bm_external_seconds max_1
+    OP_mean          -> calc_op bm_external_seconds mean_1
+    OP_internal_min  -> calc_op bm_internal_seconds min_1
+    OP_internal_max  -> calc_op bm_internal_seconds max_1
+    OP_internal_mean -> calc_op bm_internal_seconds mean_1
 
-if_query :: (InputFile->Bool) -> [LabeledQuery]
-if_query = gen_labelel_queries QD_input
 
+calc_op :: (Benchmark->Double) -> (Double->[Double]->Double) -> Vector Benchmark -> Datum
+calc_op ext agg v0 = case V.uncons v0 of
+    Nothing        -> NoDatum
+    Just (bm,bm_v) -> Datum $ agg (ext bm) $ V.toList $ V.map ext bm_v
 
+bm_external_seconds :: Benchmark -> Double
+bm_external_seconds = (/1000) . fromIntegral . getMilisecondsReal . _bm_real
+
+bm_internal_seconds :: Benchmark -> Double
+bm_internal_seconds = getSeconds . _bm_time
+
+min_1 :: Double -> [Double] -> Double
+min_1 d ds = L.minimum $ d:ds
+
+max_1 :: Double -> [Double] -> Double
+max_1 d ds = L.maximum $ d:ds
+
+mean_1 :: Double -> [Double] -> Double
+mean_1 d ds = sum (d:ds) / 1 + L.genericLength ds
 
 
 tag_to_query :: Tag -> Query
-tag_to_query tg = L.set q_tags (Set.fromList [tg]) mempty
+tag_to_query tg = LENS.set q_tags (Set.fromList [tg]) mempty
 
 gen_queries :: HasQueryMethods a => QueryDescriptorL -> (a->Bool) -> [QueryDescriptor]
 gen_queries qdl = map _lq_query . gen_labelel_queries qdl
