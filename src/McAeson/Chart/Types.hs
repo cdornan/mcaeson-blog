@@ -19,20 +19,25 @@ import qualified Data.Set                     as Set
 import           Data.Text(Text)
 -- import qualified Data.Text      as T
 -- import           Data.Time
+import           Data.Vector(Vector)
 -- import qualified Data.Vector                as V
 import           Fmt
 -- import           McAeson.Bench.Renderable
--- import           McAeson.Bench.Types
--- import           McAeson.Query
+import           McAeson.Bench.Types
+import           McAeson.Query
 import           McAeson.Query.Types
 -- import           McAeson.Installation.Persistence
--- import           McAeson.Installation.Types
-import           McAeson.Types
+import           McAeson.Installation.Types
+-- import           McAeson.Types
 -- import           Text.Show.Functions()
 
 
 import           GHC.Generics
 import           Text.Enum.Text
+
+
+root :: Root
+root = Root "/Volumes/mcaeson/data"
 
 
 type Markdown   = Text
@@ -52,20 +57,21 @@ data Chart =
   deriving (Show)
 
 data ChartData =
-  DataSet
-    { _ds_chart :: Chart
-    , _ds_data  :: [[Datum]]
+  ChartData
+    { _cd_chart :: Chart
+    , _cd_data  :: [[Datum]]
     }
+  deriving (Show)
 
 data LabeledQuery =
-  LabeledQueries
-    { _lq_label   :: Text
-    , _lq_queries :: QueryDescriptor
+  LabeledQuery
+    { _lq_label :: Text
+    , _lq_query :: QueryDescriptor
     }
   deriving (Show)
 
 data Datum
-  = DatumNull
+  = NoDatum
   | Datum Double
   deriving stock (Show)
 
@@ -81,7 +87,25 @@ data ChartPacket =
 
 
 extract :: Chart -> IO ChartData
-extract = undefined
+extract c = mk <$> mapM gen_series _c_series
+  where
+    gen_series :: LabeledQuery -> IO [Datum]
+    gen_series LabeledQuery{..} = mapM (gen_datum _lq_query) _c_values
+
+    gen_datum :: QueryDescriptor -> LabeledQuery -> IO Datum
+    gen_datum qd0 LabeledQuery{..} = calc_output OP_min <$> queryBenchmarksWith True root q
+      where
+        q = mkQuery $ qd0 <> _lq_query
+
+    Chart{..} = c
+
+    mk :: [[Datum]] -> ChartData
+    mk dz =
+      ChartData
+        { _cd_chart = c
+        , _cd_data  = dz
+        }
+
 
 renderTable :: ChartData -> Markdown
 renderTable = undefined
@@ -97,6 +121,9 @@ newtype QueryDescriptor =
     }
   deriving (Show)
 
+instance Monoid QueryDescriptor where
+  mempty = QueryDescriptor $ const Nothing
+
 instance Semigroup QueryDescriptor where
   (<>) x y = QueryDescriptor f
     where
@@ -106,6 +133,22 @@ instance Semigroup QueryDescriptor where
         where
           mb = getQueryDescriptor x qdl
 
+instance IsQuery QueryDescriptor where
+  mkQuery (QueryDescriptor f) = mconcat
+      [ case qm of
+          QueryMethods x -> mkQuery x
+        | qdl <- [minBound..maxBound]
+        , Just qm <- [f qdl]
+        ]
+
+test_chart :: Chart
+test_chart =
+  Chart
+    { _c_heading = "test chart"
+    , _c_blurb   = "functions and algoritms on giga/dt"
+    , _c_series  = al_query every
+    , _c_values  = fn_query every
+    }
 
 
 
@@ -131,7 +174,9 @@ class IsQuery a where
 class IsBrief a where
   brief :: a -> Text
 
-data QueryMethods = forall a . (Bounded a,IsBrief a,Buildable a,Enum a,IsQuery a,Show a) =>
+class (Bounded a,IsBrief a,Buildable a,Enum a,IsQuery a,Show a) => HasQueryMethods a
+
+data QueryMethods = forall a . HasQueryMethods a =>
   QueryMethods
     { _qm_value :: a
     }
@@ -139,13 +184,16 @@ data QueryMethods = forall a . (Bounded a,IsBrief a,Buildable a,Enum a,IsQuery a
 deriving instance Show QueryMethods
 
 
+fn_query :: (Function->Bool) -> [LabeledQuery]
+fn_query = gen_labelel_queries QD_function
+
 data Function
   = FN_string_count
   | FN_tsearch
   | FN_simple_json
   | FN_aeson_value
   deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
-  deriving anyclass (EnumText)
+  deriving anyclass (EnumText, HasQueryMethods)
   deriving (Buildable, TextParsable)
     via UsingEnumText Function
 
@@ -163,6 +211,8 @@ fn_to_tag fn = case fn of
     FN_aeson_value  -> TG_av
 
 
+al_query :: (Algorithm->Bool) -> [LabeledQuery]
+al_query = gen_labelel_queries QD_algorithm
 
 data Algorithm
   = AL_tyro
@@ -171,7 +221,7 @@ data Algorithm
   | AL_aeson
   | AL_jsonsimd
   deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
-  deriving anyclass (EnumText)
+  deriving anyclass (EnumText, HasQueryMethods)
   deriving (Buildable, TextParsable)
     via UsingEnumText Algorithm
 
@@ -196,7 +246,7 @@ data InputFile
   | IF_large
   | IF_little
   deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
-  deriving anyclass (EnumText)
+  deriving anyclass (EnumText, HasQueryMethods)
   deriving (Buildable, TextParsable)
     via UsingEnumText InputFile
 
@@ -214,5 +264,56 @@ if_to_tag = \case
 
 
 
+data Output
+  = OP_min
+  | OP_max
+  | OP_mean
+  | OP_internal_min
+  | OP_internal_max
+  | OP_internal_mean
+  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
+  deriving anyclass (EnumText, HasQueryMethods)
+  deriving (Buildable, TextParsable)
+    via UsingEnumText Output
+
+instance IsBrief Output where
+  brief op = case op of
+    OP_min            -> "mi"
+    OP_max            -> "mx"
+    OP_mean           -> "me"
+    OP_internal_min   -> "imi"
+    OP_internal_max   -> "imx"
+    OP_internal_mean  -> "ime"
+
+instance IsQuery Output where
+  mkQuery = const mempty
+
+calc_output :: Output -> Vector Benchmark -> Datum
+calc_output = undefined
+
+if_query :: (InputFile->Bool) -> [LabeledQuery]
+if_query = gen_labelel_queries QD_input
+
+
+
+
 tag_to_query :: Tag -> Query
 tag_to_query tg = L.set q_tags (Set.fromList [tg]) mempty
+
+gen_queries :: HasQueryMethods a => QueryDescriptorL -> (a->Bool) -> [QueryDescriptor]
+gen_queries qdl = map _lq_query . gen_labelel_queries qdl
+
+gen_labelel_queries :: HasQueryMethods a => QueryDescriptorL -> (a->Bool) -> [LabeledQuery]
+gen_labelel_queries qdl p =
+    [ LabeledQuery (fmt_t x) $ QueryDescriptor $ \case
+          qdl_ | qdl_==qdl -> Just $ QueryMethods x
+               | otherwise -> Nothing
+      | x <- [minBound..maxBound]
+      , p x
+      ]
+
+every :: a -> Bool
+every = const True
+
+-- fmt_t :: Buildable a => a -> Text
+-- fmt_t = fmt . build
