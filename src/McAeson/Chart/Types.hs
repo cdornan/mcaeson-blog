@@ -4,6 +4,7 @@
 {-# LANGUAGE DerivingVia                #-}
 {-# LANGUAGE ExistentialQuantification  #-}
 {-# LANGUAGE GeneralisedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
@@ -11,23 +12,25 @@
 
 module McAeson.Chart.Types where
 
+import qualified Control.Lens                 as L
 -- import           Control.Monad
 import           Data.Maybe
+import qualified Data.Set                     as Set
 import           Data.Text(Text)
 -- import qualified Data.Text      as T
 -- import           Data.Time
 -- import qualified Data.Vector                as V
--- import           Fmt
+import           Fmt
 -- import           McAeson.Bench.Renderable
 -- import           McAeson.Bench.Types
 -- import           McAeson.Query
 import           McAeson.Query.Types
 -- import           McAeson.Installation.Persistence
 -- import           McAeson.Installation.Types
+import           McAeson.Types
 -- import           Text.Show.Functions()
 
 
-import           Fmt
 import           GHC.Generics
 import           Text.Enum.Text
 
@@ -134,3 +137,82 @@ data QueryMethods = forall a . (Bounded a,IsBrief a,Buildable a,Enum a,IsQuery a
     }
 
 deriving instance Show QueryMethods
+
+
+data Function
+  = FN_string_count
+  | FN_tsearch
+  | FN_simple_json
+  | FN_aeson_value
+  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
+  deriving anyclass (EnumText)
+  deriving (Buildable, TextParsable)
+    via UsingEnumText Function
+
+instance IsBrief Function where
+  brief = fmt . build . fn_to_tag
+
+instance IsQuery Function where
+  mkQuery = tag_to_query . fn_to_tag
+
+fn_to_tag :: Function -> Tag
+fn_to_tag fn = case fn of
+    FN_string_count -> TG_sc
+    FN_tsearch      -> TG_ts
+    FN_simple_json  -> TG_sj
+    FN_aeson_value  -> TG_av
+
+
+
+data Algorithm
+  = AL_tyro
+  | AL_pheres
+  | AL_medea
+  | AL_aeson
+  | AL_jsonsimd
+  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
+  deriving anyclass (EnumText)
+  deriving (Buildable, TextParsable)
+    via UsingEnumText Algorithm
+
+instance IsBrief Algorithm where
+  brief = fmt . build . al_to_tag
+
+instance IsQuery Algorithm where
+  mkQuery = tag_to_query . al_to_tag
+
+al_to_tag :: Algorithm -> Tag
+al_to_tag = \case
+    AL_tyro     -> TG_ty
+    AL_pheres   -> TG_ph
+    AL_medea    -> TG_ma
+    AL_aeson    -> TG_ae
+    AL_jsonsimd -> TG_js
+
+
+
+data InputFile
+  = IF_giga
+  | IF_large
+  | IF_little
+  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
+  deriving anyclass (EnumText)
+  deriving (Buildable, TextParsable)
+    via UsingEnumText InputFile
+
+instance IsBrief InputFile where
+  brief = fmt . build . if_to_tag
+
+instance IsQuery InputFile where
+  mkQuery = tag_to_query . if_to_tag
+
+if_to_tag :: InputFile -> Tag
+if_to_tag = \case
+    IF_giga   -> TG_gi
+    IF_large  -> TG_lg
+    IF_little -> TG_lt
+
+
+
+tag_to_query :: Tag -> Query
+tag_to_query tg = L.set q_tags (Set.fromList [tg]) mempty

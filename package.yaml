@@ -25,6 +25,7 @@ dependencies:
 - heredoc
 - hsass
 - hashable
+- lens
 - mcaeson
 - text
 - time
