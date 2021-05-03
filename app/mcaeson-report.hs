@@ -10,13 +10,14 @@ import qualified Data.Vector                as V
 import           Fmt
 import           McAeson.Bench.Renderable
 import           McAeson.Bench.Types
+import           McAeson.Chart.Types
 import           McAeson.Query
 -- import           McAeson.Query.Types
 -- import           McAeson.Installation.Persistence
-import           McAeson.Installation.Types
+-- import           McAeson.Installation.Types
 
 
-type Markdown = Text
+-- type Markdown = Text
 type Label    = Text
 
 data Report =
@@ -40,9 +41,12 @@ tyro_nt =
         ]
     }
 
-root :: Root
-root = Root "/Volumes/mcaeson/data"
+-- root :: Root
+-- root = Root "/Volumes/mcaeson/data"
 
+-- test :: IsQuery a => a -> IO ()
+-- test =
+--
 
 view_q :: Query -> IO ()
 view_q q = do
@@ -61,8 +65,8 @@ gen_report = undefined Report
 aggregate_reports :: UTCTime -> [Markdown] -> Markdown
 aggregate_reports = undefined
 
-write_report :: FilePath -> Markdown -> IO ()
-write_report = undefined
+wr_report :: FilePath -> Markdown -> IO ()
+wr_report = undefined
 
 report_path :: UTCTime -> FilePath
 report_path = undefined
@@ -70,4 +74,4 @@ report_path = undefined
 main :: IO ()
 main = do
   ut <- getCurrentTime
-  write_report (report_path ut) $ aggregate_reports ut $ map gen_report reports
+  wr_report (report_path ut) $ aggregate_reports ut $ map gen_report reports

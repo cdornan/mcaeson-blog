@@ -27,6 +27,7 @@ dependencies:
 - hashable
 - lens
 - mcaeson
+- possibly
 - text
 - time
 - unordered-containers

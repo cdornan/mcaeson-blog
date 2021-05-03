@@ -26,6 +26,7 @@ import qualified Data.Vector                  as V
 import           Fmt
 -- import           McAeson.Bench.Renderable
 import           McAeson.Bench.Types
+import           McAeson.Chart.Types.WeekNo
 import           McAeson.Query
 -- import           McAeson.Installation.Persistence
 import           McAeson.Installation.Types
@@ -46,7 +47,7 @@ type Heading    = Text
 type Javascript = Text
 type Html       = Text
 
-type Report = [Chart]
+-- type Report = [Chart]
 
 data Chart =
   Chart
@@ -91,7 +92,7 @@ data ChartPacket =
 -- postReport
 ----------------------------------------------------------------------------------------------------
 
-postReport :: Report -> IO ()
+postReport :: [Chart] -> IO ()
 postReport cs = do
     ut  <- getCurrentTime
     cps <- mapM (gen ut) cs
@@ -204,6 +205,9 @@ data QueryDescriptorL
 class IsQuery a where
   mkQuery :: a -> Query
 
+class HasQueryMethods a => IsLabelledQuery a where
+  mkLabeledQueries :: (a->Bool) -> [LabeledQuery]
+
 class IsBrief a where
   brief :: a -> Text
 
@@ -220,6 +224,8 @@ deriving instance Show QueryMethods
 ----------------------------------------------------------------------------------------------------
 -- Instltn
 ----------------------------------------------------------------------------------------------------
+
+instance IsLabelledQuery Instltn where mkLabeledQueries = il_query
 
 data Instltn
   = IL_dt_8'10'4
@@ -241,13 +247,15 @@ instance IsQuery Instltn where
       iq :: [InstallationPrefix]
       iq = [InstallationPrefix $ fmt_t il]
 
+il_query :: (Instltn->Bool) -> [LabeledQuery]
+il_query = gen_labeled_queries QD_installation
+
 
 ----------------------------------------------------------------------------------------------------
 -- Machine
 ----------------------------------------------------------------------------------------------------
 
-me_query :: (Machine->Bool) -> [LabeledQuery]
-me_query = gen_labeled_queries QD_machine
+instance IsLabelledQuery Machine where mkLabeledQueries = me_query
 
 data Machine
   = ME_dt
@@ -270,13 +278,15 @@ instance IsQuery Machine where
       iq :: [InstallationPrefix]
       iq = [InstallationPrefix $ fmt_t me]
 
+me_query :: (Machine->Bool) -> [LabeledQuery]
+me_query = gen_labeled_queries QD_machine
+
 
 ----------------------------------------------------------------------------------------------------
 -- Function
 ----------------------------------------------------------------------------------------------------
 
-fn_query :: (Function->Bool) -> [LabeledQuery]
-fn_query = gen_labeled_queries QD_function
+instance IsLabelledQuery Function where mkLabeledQueries = fn_query
 
 data Function
   = FN_string_count
@@ -301,13 +311,15 @@ fn_to_tag fn = case fn of
     FN_simple_json  -> TG_sj
     FN_aeson_value  -> TG_av
 
+fn_query :: (Function->Bool) -> [LabeledQuery]
+fn_query = gen_labeled_queries QD_function
+
 
 ----------------------------------------------------------------------------------------------------
 -- Algorithm
 ----------------------------------------------------------------------------------------------------
 
-al_query :: (Algorithm->Bool) -> [LabeledQuery]
-al_query = gen_labeled_queries QD_algorithm
+instance IsLabelledQuery Algorithm where mkLabeledQueries = al_query
 
 data Algorithm
   = AL_tyro
@@ -334,10 +346,15 @@ al_to_tag = \case
     AL_aeson    -> TG_ae
     AL_jsonsimd -> TG_js
 
+al_query :: (Algorithm->Bool) -> [LabeledQuery]
+al_query = gen_labeled_queries QD_algorithm
+
 
 ----------------------------------------------------------------------------------------------------
 -- McVersion
 ----------------------------------------------------------------------------------------------------
+
+instance IsLabelledQuery McVersion where mkLabeledQueries = mv_query
 
 mv_query :: (McVersion->Bool) -> [LabeledQuery]
 mv_query = gen_labeled_queries QD_version
@@ -370,8 +387,7 @@ instance IsQuery McVersion where
 -- Compiler
 ----------------------------------------------------------------------------------------------------
 
-cr_query :: (Compiler->Bool) -> [LabeledQuery]
-cr_query = gen_labeled_queries QD_compiler
+instance IsLabelledQuery Compiler where mkLabeledQueries = cr_query
 
 data Compiler
   = CR_8'6'5
@@ -402,13 +418,15 @@ instance IsQuery Compiler where
       gv :: [GHCVersionPrefix]
       gv = [either error id $ parseText $ fmt_t il]
 
+cr_query :: (Compiler->Bool) -> [LabeledQuery]
+cr_query = gen_labeled_queries QD_compiler
+
 
 ----------------------------------------------------------------------------------------------------
 -- OS
 ----------------------------------------------------------------------------------------------------
 
-os_query :: (OS->Bool) -> [LabeledQuery]
-os_query = gen_labeled_queries QD_os
+instance IsLabelledQuery OS where mkLabeledQueries = os_query
 
 data OS
   = OS_Darwin_19'6'0
@@ -432,13 +450,15 @@ instance IsQuery OS where
       gv :: [OSVersionPrefix]
       gv = [either error id $ parseText $ fmt_t os]
 
+os_query :: (OS->Bool) -> [LabeledQuery]
+os_query = gen_labeled_queries QD_os
+
 
 ----------------------------------------------------------------------------------------------------
 -- Partitions
 ----------------------------------------------------------------------------------------------------
 
-ps_query :: (Partitions->Bool) -> [LabeledQuery]
-ps_query = gen_labeled_queries QD_partitions
+instance IsLabelledQuery Partitions where mkLabeledQueries = ps_query
 
 newtype Partitions = Partitions { getPartitions :: PartNo }
   deriving stock (Show)
@@ -458,13 +478,15 @@ instance IsQuery Partitions where
       st :: Set PartNo
       st = Set.fromList [ps]
 
+ps_query :: (Partitions->Bool) -> [LabeledQuery]
+ps_query = gen_labeled_queries QD_partitions
+
 
 ----------------------------------------------------------------------------------------------------
 -- Workers
 ----------------------------------------------------------------------------------------------------
 
-ws_query :: (Workers->Bool) -> [LabeledQuery]
-ws_query = gen_labeled_queries QD_workers
+instance IsLabelledQuery Workers where mkLabeledQueries = ws_query
 
 newtype Workers = Workers { getWorkers :: WorkerID }
   deriving stock (Show)
@@ -484,13 +506,15 @@ instance IsQuery Workers where
       st :: Set WorkerID
       st = Set.fromList [ws]
 
+ws_query :: (Workers->Bool) -> [LabeledQuery]
+ws_query = gen_labeled_queries QD_workers
+
 
 ----------------------------------------------------------------------------------------------------
 -- InputFile
 ----------------------------------------------------------------------------------------------------
 
-if_query :: (InputFile->Bool) -> [LabeledQuery]
-if_query = gen_labeled_queries QD_input
+instance IsLabelledQuery InputFile where mkLabeledQueries = if_query
 
 data InputFile
   = IF_giga
@@ -513,10 +537,49 @@ if_to_tag = \case
     IF_large  -> TG_lg
     IF_little -> TG_lt
 
+if_query :: (InputFile->Bool) -> [LabeledQuery]
+if_query = gen_labeled_queries QD_input
+
+
+----------------------------------------------------------------------------------------------------
+-- Week
+----------------------------------------------------------------------------------------------------
+
+instance IsLabelledQuery WeekNo where mkLabeledQueries = wn_query
+
+instance HasQueryMethods WeekNo
+
+instance IsBrief WeekNo where
+  brief = fmt . build
+
+instance IsQuery WeekNo where
+  mkQuery wn = LENS.set q_sessions (Just sr) mempty
+    where
+      sr :: SessionRange
+      sr = SessionRange (Just $ ins_sq start) (Just $ ins_sq end)
+
+      start, end :: UTCTime
+      start =                 ins_u $ weekStart        wn
+      end   = addUTCTime nd $ ins_u $ weekStart $ succ wn
+
+      ins_sq :: UTCTime -> SessionQuery
+      ins_sq ut = SessionQuery (Session ut) Nothing
+
+      ins_u :: Day -> UTCTime
+      ins_u = flip UTCTime 0
+
+      nd :: NominalDiffTime
+      nd = negate $ toEnum 1
+
+wn_query :: (WeekNo->Bool) -> [LabeledQuery]
+wn_query = gen_labeled_queries QD_week
+
 
 ----------------------------------------------------------------------------------------------------
 -- Output
 ----------------------------------------------------------------------------------------------------
+
+instance IsLabelledQuery Output where mkLabeledQueries = op_query
 
 data Output
   = OP_min
@@ -570,6 +633,9 @@ max_1 d ds = L.maximum $ d:ds
 
 mean_1 :: Double -> [Double] -> Double
 mean_1 d ds = sum (d:ds) / 1 + L.genericLength ds
+
+op_query :: (Output->Bool) -> [LabeledQuery]
+op_query = gen_labeled_queries QD_output
 
 
 ----------------------------------------------------------------------------------------------------

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 99716992f1b54f01af486df0b443b771ac9c9b54a1127bec35919cddd17290f8
+-- hash: a420b0a100e08fcf87696d5cd95459899fbbbfe2e2f2fbee7146a60d180c3509
 
 name:           mcaeson-blog
 version:        0.1.0.0
@@ -37,6 +37,7 @@ library
       DataBlog.Types.Stars
       DataBlog.Types.StructureReviews
       McAeson.Chart.Types
+      McAeson.Chart.Types.WeekNo
   other-modules:
       Paths_mcaeson_blog
   hs-source-dirs:
@@ -58,6 +59,7 @@ library
     , hsass
     , lens
     , mcaeson
+    , possibly
     , text
     , time
     , unordered-containers
@@ -88,6 +90,7 @@ executable mcaeson-blog
     , lens
     , mcaeson
     , mcaeson-blog
+    , possibly
     , text
     , time
     , unordered-containers
@@ -118,6 +121,7 @@ executable mcaeson-report
     , lens
     , mcaeson
     , mcaeson-blog
+    , possibly
     , text
     , time
     , unordered-containers
