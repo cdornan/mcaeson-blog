@@ -351,6 +351,37 @@ al_query = gen_labeled_queries QD_algorithm
 
 
 ----------------------------------------------------------------------------------------------------
+-- InputFile
+----------------------------------------------------------------------------------------------------
+
+instance IsLabelledQuery InputFile where mkLabeledQueries = if_query
+
+data InputFile
+  = IF_giga
+  | IF_large
+  | IF_little
+  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
+  deriving anyclass (EnumText, HasQueryMethods)
+  deriving (Buildable, TextParsable)
+    via UsingEnumText InputFile
+
+instance IsBrief InputFile where
+  brief = fmt . build . if_to_tag
+
+instance IsQuery InputFile where
+  mkQuery = tag_to_query . if_to_tag
+
+if_to_tag :: InputFile -> Tag
+if_to_tag = \case
+    IF_giga   -> TG_gi
+    IF_large  -> TG_lg
+    IF_little -> TG_lt
+
+if_query :: (InputFile->Bool) -> [LabeledQuery]
+if_query = gen_labeled_queries QD_input
+
+
+----------------------------------------------------------------------------------------------------
 -- McVersion
 ----------------------------------------------------------------------------------------------------
 
@@ -508,37 +539,6 @@ instance IsQuery Workers where
 
 ws_query :: (Workers->Bool) -> [LabeledQuery]
 ws_query = gen_labeled_queries QD_workers
-
-
-----------------------------------------------------------------------------------------------------
--- InputFile
-----------------------------------------------------------------------------------------------------
-
-instance IsLabelledQuery InputFile where mkLabeledQueries = if_query
-
-data InputFile
-  = IF_giga
-  | IF_large
-  | IF_little
-  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
-  deriving anyclass (EnumText, HasQueryMethods)
-  deriving (Buildable, TextParsable)
-    via UsingEnumText InputFile
-
-instance IsBrief InputFile where
-  brief = fmt . build . if_to_tag
-
-instance IsQuery InputFile where
-  mkQuery = tag_to_query . if_to_tag
-
-if_to_tag :: InputFile -> Tag
-if_to_tag = \case
-    IF_giga   -> TG_gi
-    IF_large  -> TG_lg
-    IF_little -> TG_lt
-
-if_query :: (InputFile->Bool) -> [LabeledQuery]
-if_query = gen_labeled_queries QD_input
 
 
 ----------------------------------------------------------------------------------------------------
