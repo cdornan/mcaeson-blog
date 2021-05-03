@@ -16,6 +16,7 @@ import qualified Control.Lens                 as LENS
 -- import           Control.Monad
 import qualified Data.List                    as L
 import           Data.Maybe
+import           Data.Set(Set)
 import qualified Data.Set                     as Set
 import           Data.Text(Text)
 import qualified Data.Text      as T
@@ -26,7 +27,6 @@ import           Fmt
 -- import           McAeson.Bench.Renderable
 import           McAeson.Bench.Types
 import           McAeson.Query
-import           McAeson.Query.Types
 -- import           McAeson.Installation.Persistence
 import           McAeson.Installation.Types
 -- import           McAeson.Types
@@ -189,6 +189,7 @@ data QueryDescriptorL
   | QD_function
   | QD_algorithm
   | QD_input
+  | QD_version
   | QD_compiler
   | QD_os
   | QD_partitions
@@ -221,18 +222,24 @@ deriving instance Show QueryMethods
 ----------------------------------------------------------------------------------------------------
 
 data Instltn
-  = IN_dt_8'10'4
+  = IL_dt_8'10'4
   deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
-  deriving anyclass (EnumText, HasQueryMethods)
+  deriving anyclass (HasQueryMethods)
   deriving (Buildable, TextParsable)
     via UsingEnumText Instltn
 
+instance EnumText Instltn where
+  configEnumText _ = version_etc
+
 instance IsBrief Instltn where
   brief = \case
-    IN_dt_8'10'4 -> "dt8"
+    IL_dt_8'10'4 -> "dt8"
 
 instance IsQuery Instltn where
-  mkQuery = undefined
+  mkQuery il = LENS.set q_installations iq mempty
+    where
+      iq :: [InstallationPrefix]
+      iq = [InstallationPrefix $ fmt_t il]
 
 
 ----------------------------------------------------------------------------------------------------
@@ -240,7 +247,7 @@ instance IsQuery Instltn where
 ----------------------------------------------------------------------------------------------------
 
 me_query :: (Machine->Bool) -> [LabeledQuery]
-me_query = gen_labelel_queries QD_machine
+me_query = gen_labeled_queries QD_machine
 
 data Machine
   = ME_dt
@@ -258,7 +265,10 @@ instance IsBrief Machine where
     ME_heartofgold -> "hog"
 
 instance IsQuery Machine where
-  mkQuery = undefined
+  mkQuery me = LENS.set q_installations iq mempty
+    where
+      iq :: [InstallationPrefix]
+      iq = [InstallationPrefix $ fmt_t me]
 
 
 ----------------------------------------------------------------------------------------------------
@@ -266,7 +276,7 @@ instance IsQuery Machine where
 ----------------------------------------------------------------------------------------------------
 
 fn_query :: (Function->Bool) -> [LabeledQuery]
-fn_query = gen_labelel_queries QD_function
+fn_query = gen_labeled_queries QD_function
 
 data Function
   = FN_string_count
@@ -297,7 +307,7 @@ fn_to_tag fn = case fn of
 ----------------------------------------------------------------------------------------------------
 
 al_query :: (Algorithm->Bool) -> [LabeledQuery]
-al_query = gen_labelel_queries QD_algorithm
+al_query = gen_labeled_queries QD_algorithm
 
 data Algorithm
   = AL_tyro
@@ -326,8 +336,42 @@ al_to_tag = \case
 
 
 ----------------------------------------------------------------------------------------------------
+-- McVersion
+----------------------------------------------------------------------------------------------------
+
+mv_query :: (McVersion->Bool) -> [LabeledQuery]
+mv_query = gen_labeled_queries QD_version
+
+data McVersion
+  = MV_0'0'0      -- == 0.0.0.*
+  | MV_0'0'0'1    -- == 0.0.0.1
+  | MV_0'0'1      -- == 0.0.1.*
+  | MV_0'0'1'0    -- == 0.0.1.0
+  | MV_0'1        -- == 0.1.*
+  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
+  deriving anyclass (HasQueryMethods)
+  deriving (Buildable, TextParsable)
+    via UsingEnumText McVersion
+
+instance EnumText McVersion where
+  configEnumText _ = version_etc
+
+instance IsBrief McVersion where
+  brief = T.filter (/='.') . fmt . build
+
+instance IsQuery McVersion where
+  mkQuery il = LENS.set q_versions mv mempty
+    where
+      mv :: [VersionPrefix]
+      mv = [either error id $ parseText $ fmt_t il]
+
+
+----------------------------------------------------------------------------------------------------
 -- Compiler
 ----------------------------------------------------------------------------------------------------
+
+cr_query :: (Compiler->Bool) -> [LabeledQuery]
+cr_query = gen_labeled_queries QD_compiler
 
 data Compiler
   = CR_8'6'5
@@ -342,43 +386,61 @@ data Compiler
   | CR_9'0'1
   | CR_9'2'1
   deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
-  deriving anyclass (EnumText, HasQueryMethods)
+  deriving anyclass (HasQueryMethods)
   deriving (Buildable, TextParsable)
     via UsingEnumText Compiler
+
+instance EnumText Compiler where
+  configEnumText _ = version_etc
 
 instance IsBrief Compiler where
   brief = T.filter (/='.') . fmt . build
 
 instance IsQuery Compiler where
-  mkQuery = undefined
+  mkQuery il = LENS.set q_compilers gv mempty
+    where
+      gv :: [GHCVersionPrefix]
+      gv = [either error id $ parseText $ fmt_t il]
 
 
 ----------------------------------------------------------------------------------------------------
 -- OS
 ----------------------------------------------------------------------------------------------------
 
+os_query :: (OS->Bool) -> [LabeledQuery]
+os_query = gen_labeled_queries QD_os
+
 data OS
-  = OS_darwin_19'6'0
-  | OS_darwin_20'3'0
+  = OS_Darwin_19'6'0
+  | OS_Darwin_20'3'0
   deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
-  deriving anyclass (EnumText, HasQueryMethods)
+  deriving anyclass (HasQueryMethods)
   deriving (Buildable, TextParsable)
     via UsingEnumText OS
 
+instance EnumText OS where
+  configEnumText _ = version_etc
+
 instance IsBrief OS where
   brief = \case
-    OS_darwin_19'6'0 -> "10.15" -- .7 (dt)
-    OS_darwin_20'3'0 -> "11.2"  -- .3 (ford)
+    OS_Darwin_19'6'0 -> "10.15" -- .7 (Big Sur)  (dt)
+    OS_Darwin_20'3'0 -> "11.2"  -- .3 (Cataline) (ford)
 
 instance IsQuery OS where
-  mkQuery = undefined
+  mkQuery os = LENS.set q_os gv mempty
+    where
+      gv :: [OSVersionPrefix]
+      gv = [either error id $ parseText $ fmt_t os]
 
 
 ----------------------------------------------------------------------------------------------------
 -- Partitions
 ----------------------------------------------------------------------------------------------------
 
-newtype Partitions = Partitions { getPartitions :: Int }
+ps_query :: (Partitions->Bool) -> [LabeledQuery]
+ps_query = gen_labeled_queries QD_partitions
+
+newtype Partitions = Partitions { getPartitions :: PartNo }
   deriving stock (Show)
   deriving newtype (Buildable,Enum,Eq,Ord,Num)
   deriving anyclass (HasQueryMethods)
@@ -391,14 +453,20 @@ instance IsBrief Partitions where
   brief = fmt . build
 
 instance IsQuery Partitions where
-  mkQuery = undefined
+  mkQuery (Partitions ps) = LENS.set q_partitions st mempty
+    where
+      st :: Set PartNo
+      st = Set.fromList [ps]
 
 
 ----------------------------------------------------------------------------------------------------
 -- Workers
 ----------------------------------------------------------------------------------------------------
 
-newtype Workers = Workers { getWorkers :: Int }
+ws_query :: (Workers->Bool) -> [LabeledQuery]
+ws_query = gen_labeled_queries QD_workers
+
+newtype Workers = Workers { getWorkers :: WorkerID }
   deriving stock (Show)
   deriving newtype (Buildable,Enum,Eq,Ord,Num)
   deriving anyclass (HasQueryMethods)
@@ -411,7 +479,10 @@ instance IsBrief Workers where
   brief = fmt . build
 
 instance IsQuery Workers where
-  mkQuery = undefined
+  mkQuery (Workers ws) = LENS.set q_workers st mempty
+    where
+      st :: Set WorkerID
+      st = Set.fromList [ws]
 
 
 ----------------------------------------------------------------------------------------------------
@@ -419,7 +490,7 @@ instance IsQuery Workers where
 ----------------------------------------------------------------------------------------------------
 
 if_query :: (InputFile->Bool) -> [LabeledQuery]
-if_query = gen_labelel_queries QD_input
+if_query = gen_labeled_queries QD_input
 
 data InputFile
   = IF_giga
@@ -509,16 +580,27 @@ tag_to_query :: Tag -> Query
 tag_to_query tg = LENS.set q_tags (Set.fromList [tg]) mempty
 
 gen_queries :: HasQueryMethods a => QueryDescriptorL -> (a->Bool) -> [QueryDescriptor]
-gen_queries qdl = map _lq_query . gen_labelel_queries qdl
+gen_queries qdl = map _lq_query . gen_labeled_queries qdl
 
-gen_labelel_queries :: HasQueryMethods a => QueryDescriptorL -> (a->Bool) -> [LabeledQuery]
-gen_labelel_queries qdl p =
+gen_labeled_queries :: HasQueryMethods a => QueryDescriptorL -> (a->Bool) -> [LabeledQuery]
+gen_labeled_queries qdl p =
     [ LabeledQuery (fmt_t x) $ QueryDescriptor $ \case
           qdl_ | qdl_==qdl -> Just $ QueryMethods x
                | otherwise -> Nothing
       | x <- [minBound..maxBound]
       , p x
       ]
+
+version_etc :: EnumTextConfig
+version_etc = defaultEnumTextConfig
+    { _etc_char_prep = ecp
+    }
+  where
+    ecp :: Char -> Char
+    ecp = \case
+      '_'  -> '-'
+      '\'' -> '.'
+      c    -> c
 
 every :: a -> Bool
 every = const True

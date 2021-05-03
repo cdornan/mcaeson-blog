@@ -11,7 +11,7 @@ import           Fmt
 import           McAeson.Bench.Renderable
 import           McAeson.Bench.Types
 import           McAeson.Query
-import           McAeson.Query.Types
+-- import           McAeson.Query.Types
 -- import           McAeson.Installation.Persistence
 import           McAeson.Installation.Types
 
