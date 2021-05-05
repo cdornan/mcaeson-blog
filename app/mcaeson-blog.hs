@@ -7,6 +7,9 @@ import           Data.Default
 import           Hakyll
 import           Hakyll.Web.Sass
 
+-- import           Hakyll.Core.Compiler.Internal  -- TODO
+-- import           Hakyll.Core.Compiler
+
 
 main :: IO ()
 main = hakyllWith cfg $ do
@@ -19,24 +22,36 @@ main = hakyllWith cfg $ do
         route $ setExtension "css"
         compile $ fmap compressCss <$> sassCompilerWith sass_options
 
-    match "assets/css/*" $ do
-        route   idRoute
-        compile compressCssCompiler
-
     match "assets/images/*" $ do
         route   idRoute
         compile copyFileCompiler
+
+    match "assets/js/*" $ do
+        route   idRoute
+        compile copyFileCompiler
+
+    match "assets/css/*" $ do
+        route   idRoute
+        compile compressCssCompiler
 
     match (fromList ["404.md","pages/about.md"]) $ do
         route   $ setExtension "html"
         compile $ pandocCompiler
             >>= loadAndApplyTemplate "templates/post.html"    postCtx
             >>= loadAndApplyTemplate "templates/default.html" postCtx
+            -- >>= (\is -> do compilerUnsafeIO $ writeFile "about.html" $ show is; return is)
             >>= relativizeUrls
 
-    match "posts/*" $ do
+    match "posts/*.md" $ do
         route $ setExtension "html"
         compile $ pandocCompiler
+            >>= loadAndApplyTemplate "templates/post.html"    postCtx
+            >>= loadAndApplyTemplate "templates/default.html" postCtx
+            >>= relativizeUrls
+
+    match "posts/*.mchtml" $ do
+        route   $ setExtension "html"
+        compile $ getResourceBody
             >>= loadAndApplyTemplate "templates/post.html"    postCtx
             >>= loadAndApplyTemplate "templates/default.html" postCtx
             >>= relativizeUrls

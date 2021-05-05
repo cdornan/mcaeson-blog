@@ -7,16 +7,40 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>mcaeson - $title$</title>
         <link rel="stylesheet" href="/assets/scss/site.css" />
+        <!-- highcharts -->
         <script src="https://code.highcharts.com/highcharts.js"></script>
         <script src="https://code.highcharts.com/modules/series-label.js"></script>
         <script src="https://code.highcharts.com/modules/exporting.js"></script>
         <script src="https://code.highcharts.com/modules/export-data.js"></script>
         <script src="https://code.highcharts.com/modules/accessibility.js"></script>
         <link rel="stylesheet" href="/assets/hc-style.css" />
+        <!-- d3, nvd3 -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js" charset="utf-8"></script>
+        <link href="/assets/css/nv.d3.css" rel="stylesheet" type="text/css">
+        <script src="/assets/js/nv.d3.js"></script>
+        <!-- <style>
+            text {
+                font: 12px sans-serif;
+            }
+            svg {
+                display: block;
+            }
+            html, body, #chart1, svg {
+                margin: 0px;
+                padding: 0px;
+                height: 100%;
+                width: 100%;
+            }
+
+            .dashed {
+                stroke-dasharray: 5,5;
+            }
+        </style> -->
+        <!-- favicons -->
         <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     </head>
-    <body>
+    <body class='with-3d-shadow with-transitions'>
         $partial("templates/partials/nav.html")$
 
         <main uk-height-viewport="expand: true">
