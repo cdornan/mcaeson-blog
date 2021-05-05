@@ -1,0 +1,74 @@
+---
+title: Sample Data Post (NVD3 2)
+subtl: Test Post (NVD3 2)
+issue: 1
+---
+
+<h2>Graph 1</h2>
+
+<p>This is another quick test.</p>
+
+<h2>Line Chart</h2>
+
+<div id="chart3" style="height:1000px;width=1000px;"></div>
+
+<script>
+    // Wrapping in nv.addGraph allows for '0 timeout render', stores rendered charts in nv.graphs, and may do more in the future... it's NOT required
+    var chart;
+    var data;
+    var legendPosition = "top";
+
+    nv.addGraph(function() {
+        chart = nv.models.lineChart()
+        ;
+
+        var x_format = function(num) {
+            var labels = [ "a", "b", "c", "d", "e" ];
+
+            return labels[num];
+        };
+
+        // chart sub-models (ie. xAxis, yAxis, etc) when accessed directly, return themselves, not the parent chart, so need to chain separately
+        chart.xAxis
+            .axisLabel("Time (s)")
+            .tickFormat(x_format);
+        ;
+
+        chart.yAxis
+            .axisLabel('Voltage (v)')
+        ;
+
+        data = sinAndCos();
+
+        d3.select('#chart3').append('svg')
+            .datum(data)
+            .call(chart);
+
+        nv.utils.windowResize(chart.update);
+
+        return chart;
+    });
+
+    function sinAndCos() {
+        var rand  = [{x:0,y:30},{x:1,y:10},{x:2,y:25},{x:3,y:30},{x:4,y:40}],
+            rand2 = [{x:0,y:35},{x:1,y:15},{x:2,y:20},{x:3,y:35},{x:4,y:45}]
+            ;
+
+        return [
+            {
+                values: rand,
+                key: "Random Cosine",
+                color: "#667711",
+                strokeWidth: 3.5
+            },
+            {
+                area: true,
+                values: rand2,
+                key: "Fill opacity",
+                color: "#EF9CFB",
+                fillOpacity: .1
+            }
+        ];
+    }
+
+</script>

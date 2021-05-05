@@ -313,3 +313,212 @@ issue: 1
     }
 
 </script>
+
+
+<h2>Chart 4</h2>
+
+<!-- <div style="position:absolute; top: 0; left: 0;">
+    <button onclick="randomizeFillOpacity();">Randomize fill opacity</button>
+    <button onclick="expandLegend();">Expand/Contract Legend</button>
+    <button onclick="toggleLegend();">Toggle Legend Top/Bottom</button>
+
+    <script>
+        var expandLegend = function() {
+            var exp = chart.legend.expanded();
+            chart.legend.expanded(!exp);
+            chart.update();
+        }
+    </script>
+</div> -->
+
+<div id="chart4" style="height:1000px;width=1000px;"></div>
+
+<script>
+    // Wrapping in nv.addGraph allows for '0 timeout render', stores rendered charts in nv.graphs, and may do more in the future... it's NOT required
+    var chart;
+    var data;
+    var legendPosition = "top";
+
+    // var randomizeFillOpacity = function() {
+    //     var rand = Math.random(0,1);
+    //     for (var i = 0; i < 100; i++) { // modify sine amplitude
+    //         data[4].values[i].y = Math.sin(i/(5 + rand)) * .4 * rand - .25;
+    //     }
+    //     data[4].fillOpacity = rand;
+    //     chart.update();
+    // };
+    //
+    // var toggleLegend = function() {
+    //     if (legendPosition == "top") {
+    //         legendPosition = "bottom";
+    //     } else {
+    //         legendPosition = "top";
+    //     }
+    //     chart.legendPosition(legendPosition);
+    //     chart.update();
+    // };
+
+    nv.addGraph(function() {
+        chart = nv.models.lineChart()
+            // .x(function(d) { return d.label })
+            // .y(function(d) { return d.value })
+            .options({
+                duration: 300,
+                useInteractiveGuideline: true
+            })
+        ;
+
+        // chart sub-models (ie. xAxis, yAxis, etc) when accessed directly, return themselves, not the parent chart, so need to chain separately
+        chart.xAxis
+            .axisLabel("Time (s)")
+            // .tickFormat(d3.format(',.1f'))
+            // .staggerLabels(true)
+        ;
+
+        chart.yAxis
+            .axisLabel('Voltage (v)')
+            .tickFormat(function(d) {
+                if (d == null) {
+                    return 'N/A';
+                }
+                return d3.format(',.2f')(d);
+            })
+        ;
+
+        data = sinAndCos();
+
+        d3.select('#chart4').append('svg')
+            .datum(data)
+            .call(chart);
+
+        nv.utils.windowResize(chart.update);
+
+        return chart;
+    });
+
+    function sinAndCos() {
+        var rand =
+                [ [1,10]
+                , [2,10]
+                , [3,10]
+                , [4,10]
+                , [5,10]
+              ];
+        var rand2 =
+                [ [1,15]
+                , [2,15]
+                , [3,15]
+                , [4,15]
+                , [5,15]
+              ];
+
+        // var rand =
+        //         [ ["a",10]
+        //         , ["b",10]
+        //         , ["c",10]
+        //         , ["d",10]
+        //         , ["e",10]
+        //       ];
+        // var rand2 =
+        //         [ ["a",15]
+        //         , ["b",15]
+        //         , ["c",15]
+        //         , ["d",15]
+        //         , ["e",15]
+        //       ];
+
+                // {
+                //     "label" : "A" ,
+                //     "value" : 29.765957771107
+                // } ,
+                // {
+                //     "label" : "B" ,
+                //     "value" : 0
+                // } ,
+                // {
+                //     "label" : "C" ,
+                //     "value" : 32.807804682612
+                // } ,
+                // {
+                //     "label" : "D" ,
+                //     "value" : 196.45946739256
+                // } ,
+                // {
+                //     "label" : "E" ,
+                //     "value" : 0.19434030906893
+                // } ,
+                // {
+                //     "label" : "F" ,
+                //     "value" : 98.079782601442
+                // } ,
+                // {
+                //     "label" : "G" ,
+                //     "value" : 13.925743130903
+                // } ,
+                // {
+                //     "label" : "H" ,
+                //     "value" : 5.1387322875705
+                // }
+                // ],
+            // rand2 = [
+            //     {
+            //         "label" : "A" ,
+            //         "value" : 10
+            //     } ,
+            //     {
+            //         "label" : "B" ,
+            //         "value" : 20
+            //     } ,
+            //     {
+            //         "label" : "C" ,
+            //         "value" : 30
+            //     } ,
+            //     {
+            //         "label" : "D" ,
+            //         "value" : 40
+            //     } ,
+            //     {
+            //         "label" : "E" ,
+            //         "value" : 50
+            //     } ,
+            //     {
+            //         "label" : "F" ,
+            //         "value" : 60
+            //     } ,
+            //     {
+            //         "label" : "G" ,
+            //         "value" : 70
+            //     } ,
+            //     {
+            //         "label" : "H" ,
+            //         "value" : 80
+            //     }
+            //   ]
+            // ;
+
+        // for (var i = 0; i < 100; i++) {
+        //     sin.push({x: i, y: i % 10 == 5 ? null : Math.sin(i/10) }); //the nulls are to show how defined works
+        //     sin2.push({x: i, y: Math.sin(i/5) * 0.4 - 0.25});
+        //     cos.push({x: i, y: .5 * Math.cos(i/10)});
+        //     rand.push({x:i, y: Math.random() / 10});
+        //     rand2.push({x: i, y: Math.cos(i/10) + Math.random() / 10 })
+        // }
+
+        return [
+            {
+                values: rand, // [ [1,10], [2,20] ],
+                key: "Random Cosine",
+                color: "#667711",
+                strokeWidth: 3.5
+            },
+            {
+                area: true,
+                values: rand2, // [ [1,20], [2,30] ],
+                key: "Fill opacity",
+                color: "#EF9CFB",
+                fillOpacity: .1
+            }
+        ];
+    }
+
+</script>
