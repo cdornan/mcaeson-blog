@@ -10,28 +10,42 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 
-module McAeson.Chart.Types where
+module McAeson.Chart.Types
+  ( root
+  , Chart(..)
+  , ChartData(..)
+  , LabeledQuery(..)
+  , ChartPacket(..)
+  , postReport
+  , extract
+  , QueryDescriptor(..)
+  , QueryDescriptorL(..)
+  , IsQuery(..)
+  , HasQueryMethods
+  , IsLabelledQuery(..)
+  , IsBrief(..)
+  , QueryMethods(..)
+  , module McAeson.Chart.Types.Basic
+  -- testing
+  , test
+  ) where
 
 import qualified Control.Lens                 as LENS
--- import           Control.Monad
 import qualified Data.List                    as L
 import           Data.Maybe
 import           Data.Set(Set)
 import qualified Data.Set                     as Set
 import           Data.Text(Text)
-import qualified Data.Text      as T
+import qualified Data.Text                    as T
 import           Data.Time
 import           Data.Vector(Vector)
 import qualified Data.Vector                  as V
 import           Fmt
--- import           McAeson.Bench.Renderable
 import           McAeson.Bench.Types
+import           McAeson.Chart.Types.Basic
 import           McAeson.Chart.Types.WeekNo
 import           McAeson.Query
--- import           McAeson.Installation.Persistence
 import           McAeson.Installation.Types
--- import           McAeson.Types
--- import           Text.Show.Functions()
 
 
 import           GHC.Generics
@@ -41,17 +55,9 @@ import           Text.Enum.Text
 root :: Root
 root = Root "/Volumes/mcaeson/data"
 
-
-type Markdown   = Text
-type Heading    = Text
-type Javascript = Text
-type Html       = Text
-
--- type Report = [Chart]
-
 data Chart =
   Chart
-    { _c_heading  :: Heading
+    { _c_heading  :: Text
     , _c_blurb    :: Markdown
     , _c_universe :: [LabeledQuery]
     , _c_series   :: [LabeledQuery]
@@ -73,15 +79,10 @@ data LabeledQuery =
     }
   deriving (Show)
 
-data Datum
-  = NoDatum
-  | Datum Double
-  deriving stock (Show)
-
 data ChartPacket =
   ChartPacket
     { _cp_id :: Text
-    , _cp_hg :: Heading
+    , _cp_hg :: Text
     , _cp_by :: Markdown
     , _cp_js :: Javascript
     }
@@ -644,9 +645,6 @@ op_query = gen_labeled_queries QD_output
 
 tag_to_query :: Tag -> Query
 tag_to_query tg = LENS.set q_tags (Set.fromList [tg]) mempty
-
-gen_queries :: HasQueryMethods a => QueryDescriptorL -> (a->Bool) -> [QueryDescriptor]
-gen_queries qdl = map _lq_query . gen_labeled_queries qdl
 
 gen_labeled_queries :: HasQueryMethods a => QueryDescriptorL -> (a->Bool) -> [LabeledQuery]
 gen_labeled_queries qdl p =

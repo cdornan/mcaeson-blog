@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 34f87a16fad3481f2360645f97b4ec75f277d949616fa1e0d4eb5dd3b49ef8a0
+-- hash: 15fd534c36b17d8d1bcf6b244ed7da11f81f165f3771774ff17afc707e8f1849
 
 name:           mcaeson-blog
 version:        0.1.0.0
@@ -37,6 +37,7 @@ library
       DataBlog.Types.Stars
       DataBlog.Types.StructureReviews
       McAeson.Chart.Types
+      McAeson.Chart.Types.Basic
       McAeson.Chart.Types.JSChart
       McAeson.Chart.Types.WeekNo
   other-modules:
@@ -47,6 +48,7 @@ library
   build-depends:
       array
     , base ==4.*
+    , blaze-html
     , containers
     , data-default
     , enum-text
@@ -77,6 +79,7 @@ executable mcaeson-blog
   build-depends:
       array
     , base ==4.*
+    , blaze-html
     , containers
     , data-default
     , enum-text
@@ -108,6 +111,7 @@ executable mcaeson-report
   build-depends:
       array
     , base ==4.*
+    , blaze-html
     , containers
     , data-default
     , enum-text
