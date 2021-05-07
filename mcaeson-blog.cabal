@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: dcd8387d24d77ff2bd90700dff0c71709a816d8a2f5aab50569ad0d55a8bec8f
+-- hash: 99c3fcf19ff8bae1d4adab95d138720a68d02b9e027297187c136bdd7ea9602b
 
 name:           mcaeson-blog
 version:        0.1.0.0
@@ -38,6 +38,7 @@ library
       DataBlog.Types.StructureReviews
       McAeson.Chart.Types
       McAeson.Chart.Types.Basic
+      McAeson.Chart.Types.Chart
       McAeson.Chart.Types.JSChart
       McAeson.Chart.Types.JSChart.JSTools
       McAeson.Chart.Types.JSChart.NVD3
