@@ -17,6 +17,7 @@ module McAeson.Chart.Types.JSChart.JSTools
 
 import           Data.Text(Text)
 import           Fmt
+import           McAeson.Chart.Types.Basic
 import           McAeson.Chart.Types.JSChart
 import           McAeson.Chart.Types.JSChart.Template
 import           Text.Enum.Text
@@ -35,9 +36,12 @@ d3Data lns =
       where
         sigma :: LineParam -> Text
         sigma = fmt . \case
-          LP_start_char -> build c
-          LP_data       -> listF _line_data
-          LP_label      -> build _line_label
+          LP_start_char -> build   c
+          LP_data       -> listF $ zipWith mk_point [0..] _line_data
+          LP_label      -> build   _line_label
+
+        mk_point :: Int -> Datum -> Builder
+        mk_point i d = "{x:"+|i|+",y:"+|d|+"}"
 
 data LineParam
   = LP_start_char
@@ -51,7 +55,7 @@ data LineParam
 line_t :: Template LineParam
 line_t = Template [here|
           <<start-char>> { values      : <<data>>
-            , key         : "<<label>>""
+            , key         : "<<label>>"
             , strokeWidth : 3.5
             }
 |]

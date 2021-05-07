@@ -66,7 +66,7 @@ template = Template [here|
 <script>
 
     nv.addGraph(function() {
-        var chart = nv.models.lineChart();
+        var chart = nv.models.lineChart().useInteractiveGuideline(true);
         var data;
 
         var x_format = function(num) {
@@ -86,7 +86,7 @@ template = Template [here|
 
         data =
           <<data>>
-        d3.select('#chart3').append('svg')
+        d3.select('#<<id>>').append('svg')
             .datum(data)
             .call(chart)
         ;

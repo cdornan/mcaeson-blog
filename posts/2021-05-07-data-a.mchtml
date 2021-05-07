@@ -1,0 +1,59 @@
+---
+title: First Generated Data Post
+subtl: NVD3 3
+issue: 1
+---
+
+<h2>test chart0</h2>
+<div id="chart0" style="height:1000px;width=1000px;"></div>
+
+<script>
+
+    nv.addGraph(function() {
+        var chart = nv.models.lineChart().useInteractiveGuideline(true);
+        var data;
+
+        var x_format = function(num) {
+            var labels = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"];
+
+            return labels[num];
+        };
+
+        chart.xAxis
+            .axisLabel("x thingies")
+            .tickFormat(x_format)
+        ;
+
+        chart.yAxis
+            .axisLabel("y thingies")
+        ;
+
+        data =
+
+          [ { values      : [{x:0,y:1.0}, {x:1,y:2.0}, {x:2,y:3.0}, {x:3,y:4.0}, {x:4,y:5.0}, {x:5,y:6.0}, {x:6,y:7.0}, {x:7,y:8.0}, {x:8,y:9.0}, {x:9,y:null}, {x:10,y:11.0}, {x:11,y:12.0}, {x:12,y:13.0}, {x:13,y:14.0}, {x:14,y:15.0}, {x:15,y:16.0}, {x:16,y:17.0}, {x:17,y:18.0}, {x:18,y:19.0}, {x:19,y:null}, {x:20,y:21.0}, {x:21,y:22.0}, {x:22,y:23.0}, {x:23,y:24.0}, {x:24,y:25.0}, {x:25,y:26.0}]
+            , key         : "line 1"
+            , strokeWidth : 3.5
+            }
+
+          , { values      : [{x:0,y:2.0}, {x:1,y:4.0}, {x:2,y:6.0}, {x:3,y:8.0}, {x:4,y:10.0}, {x:5,y:12.0}, {x:6,y:14.0}, {x:7,y:16.0}, {x:8,y:18.0}, {x:9,y:20.0}, {x:10,y:22.0}, {x:11,y:24.0}, {x:12,y:26.0}, {x:13,y:28.0}, {x:14,y:30.0}, {x:15,y:32.0}, {x:16,y:34.0}, {x:17,y:36.0}, {x:18,y:38.0}, {x:19,y:40.0}, {x:20,y:42.0}, {x:21,y:44.0}, {x:22,y:46.0}, {x:23,y:48.0}, {x:24,y:50.0}, {x:25,y:52.0}]
+            , key         : "line 2"
+            , strokeWidth : 3.5
+            }
+
+          , { values      : [{x:0,y:3.0}, {x:1,y:6.0}, {x:2,y:9.0}, {x:3,y:12.0}, {x:4,y:15.0}, {x:5,y:18.0}, {x:6,y:21.0}, {x:7,y:24.0}, {x:8,y:27.0}, {x:9,y:30.0}, {x:10,y:33.0}, {x:11,y:36.0}, {x:12,y:39.0}, {x:13,y:42.0}, {x:14,y:45.0}, {x:15,y:48.0}, {x:16,y:51.0}, {x:17,y:54.0}, {x:18,y:57.0}, {x:19,y:60.0}, {x:20,y:63.0}, {x:21,y:66.0}, {x:22,y:69.0}, {x:23,y:72.0}, {x:24,y:75.0}, {x:25,y:78.0}]
+            , key         : "line 3"
+            , strokeWidth : 3.5
+            }
+          ];
+
+        d3.select('#chart0').append('svg')
+            .datum(data)
+            .call(chart)
+        ;
+
+        nv.utils.windowResize(chart.update);
+
+        return chart;
+    });
+
+</script>
