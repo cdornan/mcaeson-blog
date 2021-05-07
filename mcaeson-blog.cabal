@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 15fd534c36b17d8d1bcf6b244ed7da11f81f165f3771774ff17afc707e8f1849
+-- hash: dcd8387d24d77ff2bd90700dff0c71709a816d8a2f5aab50569ad0d55a8bec8f
 
 name:           mcaeson-blog
 version:        0.1.0.0
@@ -39,6 +39,9 @@ library
       McAeson.Chart.Types
       McAeson.Chart.Types.Basic
       McAeson.Chart.Types.JSChart
+      McAeson.Chart.Types.JSChart.JSTools
+      McAeson.Chart.Types.JSChart.NVD3
+      McAeson.Chart.Types.JSChart.Template
       McAeson.Chart.Types.WeekNo
   other-modules:
       Paths_mcaeson_blog
