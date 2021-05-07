@@ -28,7 +28,7 @@ jsArray = build . show
 
 d3Data :: [Line] -> Builder
 d3Data lns =
-    (<>"    ]\n") $ mconcat $ zipWith d3d lns $ '[' : repeat ','
+    (<>"          ];\n") $ mconcat $ zipWith d3d lns $ '[' : repeat ','
   where
     d3d :: Line -> Char -> Builder
     d3d Line{..} c = build $ subst sigma line_t
@@ -48,12 +48,10 @@ data LineParam
   deriving (Buildable, TextParsable)
     via UsingEnumText LineParam
 
-
 line_t :: Template LineParam
 line_t = Template [here|
-    <<start_char>>
-      { values: <<data>>,
-      , key: "<<label>>"",
-      , strokeWidth: 3.5
-      }
+          <<start-char>> { values      : <<data>>
+            , key         : "<<label>>""
+            , strokeWidth : 3.5
+            }
 |]

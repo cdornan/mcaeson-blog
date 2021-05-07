@@ -31,7 +31,7 @@ instance HasJSChart NVD3 where
 mk_sigma :: NVD3 -> JSChart -> Param -> Text
 mk_sigma _ JSChart{..} p = fmt $ case p of
     P_header        -> build _jsc_header
-    P_footer        -> build _jsc_header
+    P_footer        -> build _jsc_footer
     P_id            -> build _jsc_id
     P_height        -> build _jsc_height
     P_width         -> build _jsc_width
@@ -66,11 +66,8 @@ template = Template [here|
 <script>
 
     nv.addGraph(function() {
-        var chart;
+        var chart = nv.models.lineChart();
         var data;
-
-        chart = nv.models.lineChart()
-        ;
 
         var x_format = function(num) {
             var labels = <<labels>>;
@@ -80,7 +77,7 @@ template = Template [here|
 
         chart.xAxis
             .axisLabel("<<x-axis-title>>")
-            .tickFormat(x_format);
+            .tickFormat(x_format)
         ;
 
         chart.yAxis
@@ -89,11 +86,10 @@ template = Template [here|
 
         data =
           <<data>>
-          ;
-
         d3.select('#chart3').append('svg')
             .datum(data)
-            .call(chart);
+            .call(chart)
+        ;
 
         nv.utils.windowResize(chart.update);
 
