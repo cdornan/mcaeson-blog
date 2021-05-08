@@ -50,7 +50,7 @@ tyro_nt =
 
 view_q :: Query -> IO ()
 view_q q = do
-    bm_v   <- queryBenchmarksWith True root q
+    bm_v   <- queryBenchmarksWith QS_explicit root q
     mk_rbm <- renderable LM_inter
     V.mapM_ (out mk_rbm) bm_v
   where

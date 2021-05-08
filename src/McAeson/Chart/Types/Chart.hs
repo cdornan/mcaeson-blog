@@ -39,6 +39,8 @@ data Chart =
   Chart
     { _c_heading  :: Text
     , _c_blurb    :: Markdown
+    , _c_x_title  :: Text
+    , _c_y_title  :: Text
     , _c_universe :: LabeledQuery
     , _c_series   :: [LabeledQuery]
     , _c_values   :: [LabeledQuery]
@@ -153,7 +155,7 @@ instance EnumText Instltn where
 
 instance IsBrief Instltn where
   brief = \case
-    IL_dt_8'10'4 -> "dt8"
+    IL_dt_8'10'4 -> "cdornan/dt8"
 
 instance IsQuery Instltn where
   mkQuery il = LENS.set q_installations iq mempty
@@ -190,7 +192,12 @@ instance IsQuery Machine where
   mkQuery me = LENS.set q_installations iq mempty
     where
       iq :: [InstallationPrefix]
-      iq = [InstallationPrefix $ fmt_t me]
+      iq = [InstallationPrefix pfx]
+        where
+          pfx = case me of
+            ME_dt           -> "cdornan/dt"
+            ME_ford         -> "cdornan/ford"
+            ME_heartofgold  -> "cdornan/hog"
 
 me_query :: (Machine->Bool) -> [LabeledQuery]
 me_query = genLabeledQueries QD_machine

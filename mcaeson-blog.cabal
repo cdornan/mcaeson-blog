@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 99c3fcf19ff8bae1d4adab95d138720a68d02b9e027297187c136bdd7ea9602b
+-- hash: a26eb9f7c9c167fca30da9dadc501ee8d0b4cd37f6014edd3213d221577d9668
 
 name:           mcaeson-blog
 version:        0.1.0.0
@@ -55,6 +55,7 @@ library
     , blaze-html
     , containers
     , data-default
+    , directory
     , enum-text
     , filepath
     , fmt
@@ -86,6 +87,7 @@ executable mcaeson-blog
     , blaze-html
     , containers
     , data-default
+    , directory
     , enum-text
     , filepath
     , fmt
@@ -118,6 +120,7 @@ executable mcaeson-report
     , blaze-html
     , containers
     , data-default
+    , directory
     , enum-text
     , filepath
     , fmt

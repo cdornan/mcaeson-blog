@@ -21,7 +21,7 @@ newtype Html =
     { getHtml :: Text
     }
   deriving stock (Show)
-  deriving newtype (Buildable,IsString)
+  deriving newtype (Buildable,IsString,Monoid,Semigroup)
 
 newtype ID =
   ID

@@ -12,6 +12,7 @@
 
 module McAeson.Chart.Types.JSChart.NVD3(NVD3(..)) where
 
+import           Data.Default
 import           Data.Text(Text)
 import           Fmt
 import           McAeson.Chart.Types.Basic
@@ -24,6 +25,9 @@ import           Text.Enum.Text
 
 data NVD3 = NVD3
   deriving (Show)
+
+instance Default NVD3 where
+  def = NVD3
 
 instance HasJSChart NVD3 where
   generate nvd3 = gen_html . mk_sigma nvd3

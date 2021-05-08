@@ -17,6 +17,7 @@ dependencies:
 - blaze-html
 - containers
 - data-default
+- directory
 - enum-text
 - filepath
 - fmt

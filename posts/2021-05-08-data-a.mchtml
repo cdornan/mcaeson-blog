@@ -1,0 +1,73 @@
+---
+title: Dashboard for (2021-W18)
+subtl: 2021-05-08
+issue: 2
+---
+
+
+<h1>test chart</h1>
+<p>functions and algoritms on giga/dt</p>
+
+<div id="mcchart0" style="height:1000px;width=1000px;"></div>
+
+<script>
+
+    nv.addGraph(function() {
+        var chart = nv.models.lineChart().useInteractiveGuideline(true);
+        var data;
+
+        var x_format = function(num) {
+            var labels = ["string-count","tsearch","simple-json","aeson-value"];
+
+            return labels[num];
+        };
+
+        chart.xAxis
+            .axisLabel("function")
+            .tickFormat(x_format)
+        ;
+
+        chart.yAxis
+            .axisLabel("GiB/s")
+        ;
+
+        data =
+          
+          [ { values      : [{x:0,y:0.3}, {x:1,y:0.3}, {x:2,y:0.3}, {x:3,y:0.3}]
+            , key         : "tyro"
+            , strokeWidth : 3.5
+            }
+
+          , { values      : [{x:0,y:4.6}, {x:1,y:0.3}, {x:2,y:4.6}, {x:3,y:4.6}]
+            , key         : "pheres"
+            , strokeWidth : 3.5
+            }
+
+          , { values      : [{x:0,y:4.6}, {x:1,y:0.3}, {x:2,y:4.6}, {x:3,y:4.6}]
+            , key         : "medea"
+            , strokeWidth : 3.5
+            }
+
+          , { values      : [{x:0,y:4.6}, {x:1,y:0.3}, {x:2,y:4.6}, {x:3,y:4.6}]
+            , key         : "aeson"
+            , strokeWidth : 3.5
+            }
+
+          , { values      : [{x:0,y:4.6}, {x:1,y:0.3}, {x:2,y:4.6}, {x:3,y:4.6}]
+            , key         : "jsonsimd"
+            , strokeWidth : 3.5
+            }
+          ];
+
+        d3.select('#mcchart0').append('svg')
+            .datum(data)
+            .call(chart)
+        ;
+
+        nv.utils.windowResize(chart.update);
+
+        return chart;
+    });
+
+</script>
+

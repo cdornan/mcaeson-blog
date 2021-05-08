@@ -17,9 +17,8 @@ import           Data.Text(Text)
 import           McAeson.Chart.Types.Basic
 
 
-class HasJSChart c where
+class Default c => HasJSChart c where
   generate :: c -> JSChart -> Html
-
 
 data JSChart =
   JSChart
@@ -54,7 +53,7 @@ data Line =
     }
   deriving (Show)
 
-
+-- | just for testing
 instance Default JSChart where
   def =
     JSChart
