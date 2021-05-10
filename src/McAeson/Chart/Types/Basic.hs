@@ -66,4 +66,4 @@ data Datum
 instance Buildable Datum where
   build = \case
     NoDatum -> "null"
-    Datum d -> build $ show d
+    Datum d -> fixedF 2 d

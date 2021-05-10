@@ -39,10 +39,20 @@ mk_sigma _ JSChart{..} p = fmt $ case p of
     P_id            -> build _jsc_id
     P_height        -> build _jsc_height
     P_width         -> build _jsc_width
-    P_labels        -> jsArray $ _xaxis_labels _jsc_xaxis
-    P_x_axis_title  -> build   $ _xaxis_title _jsc_xaxis
-    P_y_axis_title  -> build   $ _yaxis_title _jsc_yaxis
-    P_data          -> d3Data _jsc_lines
+    P_labels        -> jsArray $ _xaxis_labels                _jsc_xaxis
+    P_x_axis_title  -> build   $ _xaxis_title                 _jsc_xaxis
+    P_y_axis_title  -> build   $ _yaxis_title                 _jsc_yaxis
+    P_min_y         -> build   $ min_y $ concatMap _line_data _jsc_lines
+    P_max_y         -> build   $ max_y $ concatMap _line_data _jsc_lines
+    P_data          -> d3Data                                 _jsc_lines
+
+min_y, max_y :: [Datum] -> Double
+min_y ds0 = case [ d | Datum d<-ds0 ] of
+  [] -> 0
+  ds -> min 0 $ minimum ds
+max_y dtms = case [ d | Datum d<-dtms ] of
+  [] -> 0
+  ds -> maximum ds
 
 gen_html :: (Param->Text) -> Html
 gen_html = Html . flip subst template
@@ -56,6 +66,8 @@ data Param
   | P_labels
   | P_x_axis_title
   | P_y_axis_title
+  | P_min_y
+  | P_max_y
   | P_data
   deriving stock (Bounded, Enum, Eq, Ord, Show)
   deriving anyclass (EnumText)
@@ -70,13 +82,23 @@ template = Template [here|
 <script>
 
     nv.addGraph(function() {
-        var chart = nv.models.lineChart().useInteractiveGuideline(true);
+        var chart = nv.models.lineChart()
+                      .useInteractiveGuideline(true)
+                      .yDomain([<<min-y>>,<<max-y>>]);
         var data;
 
         var x_format = function(num) {
             var labels = <<labels>>;
 
             return labels[num];
+        };
+
+        var y_format = function(d) {
+          if (d==null) {
+            return "";
+          } else {
+            return d3.format(',.2f')(d);
+          }
         };
 
         chart.xAxis
@@ -86,6 +108,7 @@ template = Template [here|
 
         chart.yAxis
             .axisLabel("<<y-axis-title>>")
+            .tickFormat(y_format)
         ;
 
         data =

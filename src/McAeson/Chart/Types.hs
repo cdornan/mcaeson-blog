@@ -20,7 +20,7 @@ module McAeson.Chart.Types
   ) where
 
 import           Data.Default
--- import           Data.Text(Text)
+import           Data.Text(Text)
 import qualified Data.Text                          as T
 import qualified Data.Text.IO                       as T
 import           Data.Time
@@ -48,12 +48,18 @@ extract :: Chart -> IO ChartData
 extract c = mk <$> mapM gen_series _c_series
   where
     gen_series :: LabeledQuery -> IO [Datum]
-    gen_series LabeledQuery{..} = mapM (gen_datum _lq_query) _c_values
+    gen_series LabeledQuery{..} = mapM (gen_datum _lq_label _lq_query) _c_values
 
-    gen_datum :: QueryDescriptor -> LabeledQuery -> IO Datum
-    gen_datum qd0 lq = do
-        print q
-        calcOutput OP_min <$> queryBenchmarksWith QS_explicit root q
+    gen_datum :: Text -> QueryDescriptor -> LabeledQuery -> IO Datum
+    gen_datum slab qd0 lq = do
+        d <- calcOutput OP_min <$> queryBenchmarksWith QS_explicit root q
+        fmtLn $
+          ""   +|(padRightF 20 ' ' slab)          |+
+          " "  +|(padRightF 20 ' ' $ _lq_label lq)|+
+          " : "+|(padRightF 20 ' ' d)             |+
+          " "  +|q                                |+
+          ""
+        return d
       where
         q = mkQuery $ qd0 <> _lq_query lq <> _lq_query _c_universe
 

@@ -24,6 +24,7 @@ import           Data.Vector(Vector)
 import qualified Data.Vector                  as V
 import           Fmt
 import           GHC.Generics
+import           McAeson.Bench.JobTags
 import           McAeson.Bench.Types
 import           McAeson.Chart.Types.Basic
 import           McAeson.Chart.Types.WeekNo
@@ -33,7 +34,7 @@ import           Text.Enum.Text
 
 
 root :: Root
-root = Root "/Volumes/mcaeson/data"
+root = Root defaultSharedQueryRoot
 
 data Chart =
   Chart
@@ -526,6 +527,7 @@ instance IsBrief Output where
 instance IsQuery Output where
   mkQuery = const mempty
 
+-- | retsricted to GiB/s for now
 calcOutput :: Output -> Vector Benchmark -> Datum
 calcOutput op = case op of
     OP_min           -> calc_op bm_external_seconds min_1
@@ -541,7 +543,16 @@ calcOutput op = case op of
         Just (bm,bm_v) -> Datum $ agg (ext bm) $ V.toList $ V.map ext bm_v
 
     bm_external_seconds :: Benchmark -> Double
-    bm_external_seconds = (/1000) . fromIntegral . getMilisecondsReal . _bm_real
+    bm_external_seconds bm = calc bm
+      where
+        calc :: Benchmark -> Double
+        calc = gibps . (/1000) . fromIntegral . getMilisecondsReal . _bm_real
+
+        gibps :: Double -> Double
+        gibps secs = fromMaybe 0 (input_bytes bm) / (gib*secs)
+
+        gib :: Double
+        gib = 1024 * 1024 * 1024
 
     bm_internal_seconds :: Benchmark -> Double
     bm_internal_seconds = getSeconds . _bm_time
@@ -555,6 +566,12 @@ calcOutput op = case op of
     mean_1 :: Double -> [Double] -> Double
     mean_1 d ds = sum (d:ds) / 1 + L.genericLength ds
 
+input_bytes :: Benchmark -> Maybe Double
+input_bytes Benchmark{..} =
+  case L.nub $ catMaybes $ map tagToinputSize $ filter (getTags _bm_tags) [minBound..maxBound] of
+    [sz] -> Just $ fromInteger sz
+    _    -> Nothing
+
 op_query :: (Output->Bool) -> [LabeledQuery]
 op_query = genLabeledQueries QD_output
 
@@ -564,7 +581,7 @@ op_query = genLabeledQueries QD_output
 ----------------------------------------------------------------------------------------------------
 
 tagToQuery :: Tag -> Query
-tagToQuery tg = LENS.set q_tags (Set.fromList [tg]) mempty
+tagToQuery tg = LENS.set q_tags ([Set.fromList [tg]]) mempty
 
 genLabeledQueries :: HasQueryMethods a => QueryDescriptorL -> (a->Bool) -> [LabeledQuery]
 genLabeledQueries qdl p =

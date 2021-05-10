@@ -29,7 +29,7 @@ data JSChart =
     , _jsc_footer :: Html     -- ^ Html following the graph
     , _jsc_xaxis  :: XAxis    -- ^ x axis parameters, including labels
     , _jsc_yaxis  :: YAxis    -- ^ y axis parameters
-    , _jsc_lines  :: [Line]   -- ^ the line-by-lind date (lengths to match length of x axis labels)
+    , _jsc_lines  :: [Line]   -- ^ the line-by-line data (lengths to match length of x axis labels)
     }
   deriving (Show)
 
