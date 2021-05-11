@@ -54,6 +54,13 @@ packages:
   original:
     hackage: enum-text-0.5.2.1
 - completed:
+    hackage: pandoc-csv2table-1.0.9@sha256:ed400a18cac28be6da995d7357d014690d7950e554caee4d5dd1bd274690b5ee,1920
+    pantry-tree:
+      size: 582
+      sha256: c71d1c6ecdea4dfdc92167840ca69d4e99dbf80c7ffc2ff49663031ed723daf9
+  original:
+    hackage: pandoc-csv2table-1.0.9
+- completed:
     hackage: vector-0.12.3.0@sha256:0ae2c1ba86f0077910be242ec6802cc3d7725fe7b2bea6987201aa3737b239b5,7953
     pantry-tree:
       size: 3842

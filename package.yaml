@@ -30,6 +30,8 @@ dependencies:
 - lens
 - mcaeson
 - possibly
+- pandoc-types
+- pandoc-csv2table
 - text
 - time
 - unordered-containers

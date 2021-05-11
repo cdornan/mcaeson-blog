@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a26eb9f7c9c167fca30da9dadc501ee8d0b4cd37f6014edd3213d221577d9668
+-- hash: 7ac451beaa6000243d34dfeaafaeb1520dd12d2245538f95a9d177f9fa75b4d6
 
 name:           mcaeson-blog
 version:        0.1.0.0
@@ -43,6 +43,7 @@ library
       McAeson.Chart.Types.JSChart.JSTools
       McAeson.Chart.Types.JSChart.NVD3
       McAeson.Chart.Types.JSChart.Template
+      McAeson.Chart.Types.Table
       McAeson.Chart.Types.WeekNo
   other-modules:
       Paths_mcaeson_blog
@@ -67,6 +68,8 @@ library
     , hsass
     , lens
     , mcaeson
+    , pandoc-csv2table
+    , pandoc-types
     , possibly
     , text
     , time
@@ -100,6 +103,8 @@ executable mcaeson-blog
     , lens
     , mcaeson
     , mcaeson-blog
+    , pandoc-csv2table
+    , pandoc-types
     , possibly
     , text
     , time
@@ -133,6 +138,8 @@ executable mcaeson-report
     , lens
     , mcaeson
     , mcaeson-blog
+    , pandoc-csv2table
+    , pandoc-types
     , possibly
     , text
     , time

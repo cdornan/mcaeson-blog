@@ -26,6 +26,7 @@ extra-deps:
 - hakyll-sass-0.2.4
 - hslua-module-path-0.1.0.1
 - enum-text-0.5.2.1
+- pandoc-csv2table-1.0.9
 
 # - hlibsass-0.1.10.1
 
