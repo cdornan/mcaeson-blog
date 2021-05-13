@@ -33,7 +33,6 @@ import           McAeson.Chart.Types.JSChart.NVD3
 import           McAeson.Chart.Types.WeekNo
 import           McAeson.Query
 import           System.Directory
--- import           System.FilePath
 
 
 ----------------------------------------------------------------------------------------------------
@@ -53,7 +52,7 @@ extract c = mk <$> mapM gen_series (_lqs_queries _c_series)
 
     gen_datum :: Text -> QueryDescriptor -> LabeledQuery -> IO Datum
     gen_datum slab qd0 lq = do
-        d <- calcOutput OP_best <$> queryBenchmarksWith QS_explicit root q
+        d <- calcOutput OP_e_best <$> queryBenchmarksWith QS_explicit root q
         fmtLn $
           ""   +|(padRightF 20 ' ' slab)          |+
           " "  +|(padRightF 20 ' ' $ _lq_label lq)|+
@@ -179,24 +178,79 @@ mk_js_chart i ChartData{..} = case _uni_units $ _c_universe _cd_chart of
 ----------------------------------------------------------------------------------------------------
 
 test :: IO ()
-test = postReport [test_chart]
+test = postReport [test_chart,test_multi_chart]
 
 test_chart :: Chart
 test_chart =
   Chart
     { _c_heading  = "test chart"
-    , _c_blurb    = "functions and algoritms on giga/dt"
-    , _c_universe =
-        Universe
-          { _uni_units   = [U_GiBps]
-          , _uni_queries = LabeledQueries "giga/dt" (Set.fromList [OP_best]) $ concat
-              [ _lqs_queries $ me_query (==ME_dt)
-              , _lqs_queries $ if_query (==IF_giga)
-              ]
-          }
+    , _c_blurb    = "functions and algoritms on giga/dt (best)"
+    , _c_universe = giga_dt_GiBps_universe
     , _c_series   = al_query every
     , _c_values   = fn_query every
     }
+
+giga_dt_GiBps_universe :: Universe
+giga_dt_GiBps_universe =
+    Universe
+      { _uni_units   = [U_GiBps]
+      , _uni_queries = LabeledQueries "giga/dt" (Set.fromList [OP_e_best]) $ concat
+          [ _lqs_queries $ me_query (==ME_dt)
+          , _lqs_queries $ if_query (==IF_giga)
+          ]
+      }
+
+test_multi_chart :: Chart
+test_multi_chart =
+  Chart
+    { _c_heading  = "test multi chart"
+    , _c_blurb    = "algorithm time and space usage on sc/giga/dt (best)"
+    , _c_universe = sc_giga_dt_GiBps_universe
+    , _c_series   = op_query best_time_and_space
+    , _c_values   = al_query every
+    }
+
+best_time_and_space :: Output -> Bool
+best_time_and_space op = case op of
+  -- external times
+  OP_e_best           -> True
+  OP_e_worst          -> False
+  OP_e_mean           -> False
+  -- internal times
+  OP_i_best           -> True
+  OP_i_worst          -> False
+  OP_i_mean           -> False
+  -- memory: best
+  OP_e_best_max_res   -> True
+  OP_e_best_reclaims  -> False
+  OP_e_best_ctx_sws   -> False
+  OP_i_best_allocated -> True
+  OP_i_best_copied    -> True
+  OP_i_best_num_gcs   -> False
+  -- memory: worst
+  OP_e_wrst_max_res   -> False
+  OP_e_wrst_reclaims  -> False
+  OP_e_wrst_ctx_sws   -> False
+  OP_i_wrst_allocated -> False
+  OP_i_wrst_copied    -> False
+  OP_i_wrst_num_gcs   -> False
+  -- memory: mean
+  OP_e_mean_max_res   -> False
+  OP_e_mean_reclaims  -> False
+  OP_e_mean_ctx_sws   -> False
+  OP_i_mean_allocated -> False
+  OP_i_mean_copied    -> False
+  OP_i_mean_num_gcs   -> False
+
+sc_giga_dt_GiBps_universe :: Universe
+sc_giga_dt_GiBps_universe =
+    Universe
+      { _uni_units   = [U_GiBps,U_GiB]
+      , _uni_queries = LabeledQueries "sc/giga/dt" (Set.fromList []) $ concat
+          [ _lqs_queries $ me_query (==ME_dt)
+          , _lqs_queries $ if_query (==IF_giga)
+          ]
+      }
 
 
 ----------------------------------------------------------------------------------------------------
