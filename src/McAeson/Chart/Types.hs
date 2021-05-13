@@ -129,8 +129,13 @@ post_filepath ut = loop 'a'
 
 mk_js_chart :: Int -> ChartData -> JSChart
 mk_js_chart i ChartData{..} = case _uni_units $ _c_universe _cd_chart of
-    []  -> error "mk_js_chart: no units"
-    [u] ->
+    []     -> error "mk_js_chart: no units"
+    [u]    -> mk u Nothing
+    [u,u'] -> mk u $ Just u'
+    _   -> undefined -- multigraph
+  where
+    mk :: Unit -> Maybe Unit -> JSChart
+    mk u mb_u2 =
       JSChart
         { _jsc_id     = ID $ "mcchart"+|i|+""
         , _jsc_height = "1000px"
@@ -138,31 +143,27 @@ mk_js_chart i ChartData{..} = case _uni_units $ _c_universe _cd_chart of
         , _jsc_header = header
         , _jsc_footer = ""
         , _jsc_xaxis  = xaxis
-        , _jsc_yaxis  = yaxis
-        , _jsc_yaxis2 = Nothing
+        , _jsc_yaxis  = yaxis u
+        , _jsc_yaxis2 = yaxis <$> mb_u2
         , _jsc_lines  = lnes
         }
       where
         header = Html $ fmt $ unlines_b
           [ "<h1>"+|_c_heading|+"</h1>"
-          , "<p>"+|_c_blurb|+"</p>"
+          , "<p>" +|_c_blurb  |+"</p>"
           ]
+
         xaxis =
           XAxis
             { _xaxis_title  = _lqs_label _c_values
             , _xaxis_labels = map _lq_label $ _lqs_queries _c_values
             }
 
-        yaxis =
-          YAxis
-            { _yaxis_title = fmt $ build u
-            }
-
         lnes :: [Line]
-        lnes = zipWith mk (_lqs_queries _c_series) _cd_data
+        lnes = zipWith mk_ln (_lqs_queries _c_series) _cd_data
           where
-            mk :: LabeledQuery -> [Datum] -> Line
-            mk LabeledQuery{..} ds =
+            mk_ln :: LabeledQuery -> [Datum] -> Line
+            mk_ln LabeledQuery{..} ds =
                 Line
                   { _line_label   = _lq_label
                   , _line_yaxis2  = False
@@ -170,7 +171,12 @@ mk_js_chart i ChartData{..} = case _uni_units $ _c_universe _cd_chart of
                   }
 
         Chart{..} = _cd_chart
-    _ -> undefined -- multigraph
+
+    yaxis :: Unit -> YAxis
+    yaxis u =
+      YAxis
+        { _yaxis_title = fmt $ build u
+        }
 
 
 ----------------------------------------------------------------------------------------------------
