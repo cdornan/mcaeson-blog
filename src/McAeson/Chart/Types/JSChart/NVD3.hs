@@ -33,18 +33,21 @@ instance HasJSChart NVD3 where
   generate nvd3 = gen_html . mk_sigma nvd3
 
 mk_sigma :: NVD3 -> JSChart -> Param -> Text
-mk_sigma _ JSChart{..} p = fmt $ case p of
-    P_header        -> build _jsc_header
-    P_footer        -> build _jsc_footer
-    P_id            -> build _jsc_id
-    P_height        -> build _jsc_height
-    P_width         -> build _jsc_width
-    P_labels        -> jsArray $ _xaxis_labels                _jsc_xaxis
-    P_x_axis_title  -> build   $ _xaxis_title                 _jsc_xaxis
-    P_y_axis_title  -> build   $ _yaxis_title                 _jsc_yaxis
-    P_min_y         -> build   $ min_y $ concatMap _line_data _jsc_lines
-    P_max_y         -> build   $ max_y $ concatMap _line_data _jsc_lines
-    P_data          -> d3Data                                 _jsc_lines
+mk_sigma _ JSChart{..} p = case _jsc_yaxis2 of
+  Nothing ->
+    fmt $ case p of
+      P_header        -> build _jsc_header
+      P_footer        -> build _jsc_footer
+      P_id            -> build _jsc_id
+      P_height        -> build _jsc_height
+      P_width         -> build _jsc_width
+      P_labels        -> jsArray $ _xaxis_labels                _jsc_xaxis
+      P_x_axis_title  -> build   $ _xaxis_title                 _jsc_xaxis
+      P_y_axis_title  -> build   $ _yaxis_title                 _jsc_yaxis
+      P_min_y         -> build   $ min_y $ concatMap _line_data _jsc_lines
+      P_max_y         -> build   $ max_y $ concatMap _line_data _jsc_lines
+      P_data          -> d3Data                                 _jsc_lines
+  Just _ -> undefined -- multigraph
 
 min_y, max_y :: [Datum] -> Double
 min_y ds0 = case [ d | Datum d<-ds0 ] of

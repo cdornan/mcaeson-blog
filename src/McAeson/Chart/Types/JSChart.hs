@@ -22,14 +22,15 @@ class Default c => HasJSChart c where
 
 data JSChart =
   JSChart
-    { _jsc_id     :: ID       -- ^ unique DOM id to use for JS chart container
-    , _jsc_height :: Height   -- ^ height of JS chart container
-    , _jsc_width  :: Width    -- ^ width  of JS chart container
-    , _jsc_header :: Html     -- ^ Html preceding the graph
-    , _jsc_footer :: Html     -- ^ Html following the graph
-    , _jsc_xaxis  :: XAxis    -- ^ x axis parameters, including labels
-    , _jsc_yaxis  :: YAxis    -- ^ y axis parameters
-    , _jsc_lines  :: [Line]   -- ^ the line-by-line data (lengths to match length of x axis labels)
+    { _jsc_id     :: ID           -- ^ unique DOM id to use for JS chart container
+    , _jsc_height :: Height       -- ^ height of JS chart container
+    , _jsc_width  :: Width        -- ^ width  of JS chart container
+    , _jsc_header :: Html         -- ^ Html preceding the graph
+    , _jsc_footer :: Html         -- ^ Html following the graph
+    , _jsc_xaxis  :: XAxis        -- ^ x axis parameters, including labels
+    , _jsc_yaxis  :: YAxis        -- ^ y axis parameters
+    , _jsc_yaxis2 :: Maybe YAxis  -- ^ y axis parameters for the second axis on dual-axis graphs
+    , _jsc_lines  :: [Line]       -- ^ the line-by-line data (lengths to match length of x axis labels)
     }
   deriving (Show)
 
@@ -48,8 +49,9 @@ data YAxis =
 
 data Line =
   Line
-    { _line_label :: Text     -- ^ label for the line
-    , _line_data  :: [Datum]  -- ^ the data (to match numbet of x-axis labels)
+    { _line_label  :: Text     -- ^ label for the line
+    , _line_yaxis2 :: Bool     -- ^ True => for yaxis2
+    , _line_data   :: [Datum]  -- ^ the data (to match numbet of x-axis labels)
     }
   deriving (Show)
 
@@ -64,16 +66,17 @@ instance Default JSChart where
       , _jsc_footer = ""
       , _jsc_xaxis  = XAxis "x thingies" [fromString [c] | c<-['a'..'z']]
       , _jsc_yaxis  = YAxis "y thingies"
+      , _jsc_yaxis2 = Nothing
       , _jsc_lines  = [l1,l2,l3]
       }
     where
       l1, l2, l3 :: Line
 
-      l1 = Line "line 1" $ map f1 is
+      l1 = Line "line 1" False $ map f1 is
 
-      l2 = Line "line 2" $ map f2 is
+      l2 = Line "line 2" False $ map f2 is
 
-      l3 = Line "line 3" $ map f3 is
+      l3 = Line "line 3" False $ map f3 is
 
       f1, f2, f3 :: Int -> Datum
 

@@ -40,11 +40,16 @@ data Chart =
   Chart
     { _c_heading  :: Text
     , _c_blurb    :: Markdown
-    , _c_x_title  :: Text
-    , _c_y_title  :: Text
-    , _c_universe :: LabeledQuery
-    , _c_series   :: [LabeledQuery]
-    , _c_values   :: [LabeledQuery]
+    , _c_universe :: Universe
+    , _c_series   :: LabeledQueries
+    , _c_values   :: LabeledQueries
+    }
+  deriving (Show)
+
+data Universe =
+  Universe
+    { _uni_units   :: [Unit]
+    , _uni_queries :: LabeledQueries
     }
   deriving (Show)
 
@@ -52,6 +57,14 @@ data ChartData =
   ChartData
     { _cd_chart :: Chart
     , _cd_data  :: [[Datum]]
+    }
+  deriving (Show)
+
+data LabeledQueries =
+  LabeledQueries
+    { _lqs_label   :: Text
+    , _lqs_output  :: Set Output
+    , _lqs_queries :: [LabeledQuery]
     }
   deriving (Show)
 
@@ -67,17 +80,26 @@ data LabeledQuery =
 -- QueryDescriptor
 ----------------------------------------------------------------------------------------------------
 
-newtype QueryDescriptor =
+data QueryDescriptor =
   QueryDescriptor
     { getQueryDescriptor :: QueryDescriptorL -> Maybe QueryMethods
+    , getOutput          :: Set Output
     }
   deriving (Show)
 
 instance Monoid QueryDescriptor where
-  mempty = QueryDescriptor $ const Nothing
+  mempty =
+    QueryDescriptor
+      { getQueryDescriptor = const Nothing
+      , getOutput          = Set.empty
+      }
 
 instance Semigroup QueryDescriptor where
-  (<>) x y = QueryDescriptor f
+  (<>) x y =
+    QueryDescriptor
+      { getQueryDescriptor = f
+      , getOutput          = getOutput x <> getOutput y
+      }
     where
       f qdl = case isJust mb of
           True  -> mb
@@ -86,7 +108,7 @@ instance Semigroup QueryDescriptor where
           mb = getQueryDescriptor x qdl
 
 instance IsQuery QueryDescriptor where
-  mkQuery (QueryDescriptor f) = mconcat
+  mkQuery (QueryDescriptor f _) = mconcat
       [ case qm of
           QueryMethods x -> mkQuery x
         | qdl <- [minBound..maxBound]
@@ -105,7 +127,6 @@ data QueryDescriptorL
   | QD_partitions
   | QD_workers
   | QD_week
-  | QD_output
   deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
   deriving anyclass (EnumText)
   deriving (Buildable, TextParsable)
@@ -114,8 +135,8 @@ data QueryDescriptorL
 class IsQuery a where
   mkQuery :: a -> Query
 
-class HasQueryMethods a => IsLabelledQuery a where
-  mkLabeledQueries :: (a->Bool) -> [LabeledQuery]
+class HasQueryMethods a => IsLabeledQuery a where
+  mkLabeledQueries :: (a->Bool) -> LabeledQueries
 
 class IsBrief a where
   brief :: a -> Text
@@ -131,18 +152,31 @@ deriving instance Show QueryMethods
 
 
 ----------------------------------------------------------------------------------------------------
+-- Unit
+----------------------------------------------------------------------------------------------------
+
+data Unit
+  = U_GiBps
+  | U_GiBpGiB
+  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
+  deriving anyclass (EnumText)
+  deriving (Buildable, TextParsable)
+    via UsingEnumText Unit
+
+
+----------------------------------------------------------------------------------------------------
 -- universe
 ----------------------------------------------------------------------------------------------------
 
-universe :: Text -> [LabeledQuery] -> LabeledQuery
-universe lab lqs = LabeledQuery lab $ mconcat $ map _lq_query lqs
+universe :: LabeledQueries -> QueryDescriptor
+universe lqs = mconcat $ map _lq_query $ _lqs_queries lqs
 
 
 ----------------------------------------------------------------------------------------------------
 -- Instltn
 ----------------------------------------------------------------------------------------------------
 
-instance IsLabelledQuery Instltn where mkLabeledQueries = il_query
+instance IsLabeledQuery Instltn where mkLabeledQueries = il_query
 
 data Instltn
   = IL_dt_8'10'4
@@ -164,15 +198,15 @@ instance IsQuery Instltn where
       iq :: [InstallationPrefix]
       iq = [InstallationPrefix $ fmt_t il]
 
-il_query :: (Instltn->Bool) -> [LabeledQuery]
-il_query = genLabeledQueries QD_installation
+il_query :: (Instltn->Bool) -> LabeledQueries
+il_query = genEOLabeledQueries QD_installation
 
 
 ----------------------------------------------------------------------------------------------------
 -- Machine
 ----------------------------------------------------------------------------------------------------
 
-instance IsLabelledQuery Machine where mkLabeledQueries = me_query
+instance IsLabeledQuery Machine where mkLabeledQueries = me_query
 
 data Machine
   = ME_dt
@@ -200,15 +234,15 @@ instance IsQuery Machine where
             ME_ford         -> "cdornan/ford"
             ME_heartofgold  -> "cdornan/hog"
 
-me_query :: (Machine->Bool) -> [LabeledQuery]
-me_query = genLabeledQueries QD_machine
+me_query :: (Machine->Bool) -> LabeledQueries
+me_query = genEOLabeledQueries QD_machine
 
 
 ----------------------------------------------------------------------------------------------------
 -- Function
 ----------------------------------------------------------------------------------------------------
 
-instance IsLabelledQuery Function where mkLabeledQueries = fn_query
+instance IsLabeledQuery Function where mkLabeledQueries = fn_query
 
 data Function
   = FN_string_count
@@ -233,15 +267,15 @@ fn_to_tag fn = case fn of
     FN_simple_json  -> TG_sj
     FN_aeson_value  -> TG_av
 
-fn_query :: (Function->Bool) -> [LabeledQuery]
-fn_query = genLabeledQueries QD_function
+fn_query :: (Function->Bool) -> LabeledQueries
+fn_query = genEOLabeledQueries QD_function
 
 
 ----------------------------------------------------------------------------------------------------
 -- Algorithm
 ----------------------------------------------------------------------------------------------------
 
-instance IsLabelledQuery Algorithm where mkLabeledQueries = al_query
+instance IsLabeledQuery Algorithm where mkLabeledQueries = al_query
 
 data Algorithm
   = AL_tyro
@@ -268,15 +302,15 @@ al_to_tag = \case
     AL_aeson    -> TG_ae
     AL_jsonsimd -> TG_js
 
-al_query :: (Algorithm->Bool) -> [LabeledQuery]
-al_query = genLabeledQueries QD_algorithm
+al_query :: (Algorithm->Bool) -> LabeledQueries
+al_query = genEOLabeledQueries QD_algorithm
 
 
 ----------------------------------------------------------------------------------------------------
 -- InputFile
 ----------------------------------------------------------------------------------------------------
 
-instance IsLabelledQuery InputFile where mkLabeledQueries = if_query
+instance IsLabeledQuery InputFile where mkLabeledQueries = if_query
 
 data InputFile
   = IF_giga
@@ -299,15 +333,15 @@ if_to_tag = \case
     IF_large  -> TG_lg
     IF_little -> TG_lt
 
-if_query :: (InputFile->Bool) -> [LabeledQuery]
-if_query = genLabeledQueries QD_input
+if_query :: (InputFile->Bool) -> LabeledQueries
+if_query = genEOLabeledQueries QD_input
 
 
 ----------------------------------------------------------------------------------------------------
 -- McVersion
 ----------------------------------------------------------------------------------------------------
 
-instance IsLabelledQuery McVersion where mkLabeledQueries = mv_query
+instance IsLabeledQuery McVersion where mkLabeledQueries = mv_query
 
 data McVersion
   = MV_0'0'0      -- == 0.0.0.*
@@ -332,15 +366,15 @@ instance IsQuery McVersion where
       mv :: [VersionPrefix]
       mv = [either error id $ parseText $ fmt_t il]
 
-mv_query :: (McVersion->Bool) -> [LabeledQuery]
-mv_query = genLabeledQueries QD_version
+mv_query :: (McVersion->Bool) -> LabeledQueries
+mv_query = genEOLabeledQueries QD_version
 
 
 ----------------------------------------------------------------------------------------------------
 -- Compiler
 ----------------------------------------------------------------------------------------------------
 
-instance IsLabelledQuery Compiler where mkLabeledQueries = cr_query
+instance IsLabeledQuery Compiler where mkLabeledQueries = cr_query
 
 data Compiler
   = CR_8'6'5
@@ -371,15 +405,15 @@ instance IsQuery Compiler where
       gv :: [GHCVersionPrefix]
       gv = [either error id $ parseText $ fmt_t il]
 
-cr_query :: (Compiler->Bool) -> [LabeledQuery]
-cr_query = genLabeledQueries QD_compiler
+cr_query :: (Compiler->Bool) -> LabeledQueries
+cr_query = genEOLabeledQueries QD_compiler
 
 
 ----------------------------------------------------------------------------------------------------
 -- OS
 ----------------------------------------------------------------------------------------------------
 
-instance IsLabelledQuery OS where mkLabeledQueries = os_query
+instance IsLabeledQuery OS where mkLabeledQueries = os_query
 
 data OS
   = OS_Darwin_19'6'0
@@ -403,15 +437,15 @@ instance IsQuery OS where
       gv :: [OSVersionPrefix]
       gv = [either error id $ parseText $ fmt_t os]
 
-os_query :: (OS->Bool) -> [LabeledQuery]
-os_query = genLabeledQueries QD_os
+os_query :: (OS->Bool) -> LabeledQueries
+os_query = genEOLabeledQueries QD_os
 
 
 ----------------------------------------------------------------------------------------------------
 -- Partitions
 ----------------------------------------------------------------------------------------------------
 
-instance IsLabelledQuery Partitions where mkLabeledQueries = ps_query
+instance IsLabeledQuery Partitions where mkLabeledQueries = ps_query
 
 newtype Partitions = Partitions { getPartitions :: PartNo }
   deriving stock (Show)
@@ -431,15 +465,15 @@ instance IsQuery Partitions where
       st :: Set PartNo
       st = Set.fromList [ps]
 
-ps_query :: (Partitions->Bool) -> [LabeledQuery]
-ps_query = genLabeledQueries QD_partitions
+ps_query :: (Partitions->Bool) -> LabeledQueries
+ps_query = genEOLabeledQueries QD_partitions
 
 
 ----------------------------------------------------------------------------------------------------
 -- Workers
 ----------------------------------------------------------------------------------------------------
 
-instance IsLabelledQuery Workers where mkLabeledQueries = ws_query
+instance IsLabeledQuery Workers where mkLabeledQueries = ws_query
 
 newtype Workers = Workers { getWorkers :: WorkerID }
   deriving stock (Show)
@@ -459,15 +493,15 @@ instance IsQuery Workers where
       st :: Set WorkerID
       st = Set.fromList [ws]
 
-ws_query :: (Workers->Bool) -> [LabeledQuery]
-ws_query = genLabeledQueries QD_workers
+ws_query :: (Workers->Bool) -> LabeledQueries
+ws_query = genEOLabeledQueries QD_workers
 
 
 ----------------------------------------------------------------------------------------------------
 -- Week
 ----------------------------------------------------------------------------------------------------
 
-instance IsLabelledQuery WeekNo where mkLabeledQueries = wn_query
+instance IsLabeledQuery WeekNo where mkLabeledQueries = wn_query
 
 instance HasQueryMethods WeekNo
 
@@ -493,23 +527,23 @@ instance IsQuery WeekNo where
       nd :: NominalDiffTime
       nd = negate $ toEnum 1
 
-wn_query :: (WeekNo->Bool) -> [LabeledQuery]
-wn_query = genLabeledQueries QD_week
+wn_query :: (WeekNo->Bool) -> LabeledQueries
+wn_query = genEOLabeledQueries QD_week
 
 
 ----------------------------------------------------------------------------------------------------
 -- Output
 ----------------------------------------------------------------------------------------------------
 
-instance IsLabelledQuery Output where mkLabeledQueries = op_query
+instance IsLabeledQuery Output where mkLabeledQueries = op_query
 
 data Output
-  = OP_min
-  | OP_max
+  = OP_best
+  | OP_worst
   | OP_mean
-  | OP_internal_min
-  | OP_internal_max
-  | OP_internal_mean
+  | OP_i_best
+  | OP_i_worst
+  | OP_i_mean
   deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
   deriving anyclass (EnumText, HasQueryMethods)
   deriving (Buildable, TextParsable)
@@ -517,25 +551,34 @@ data Output
 
 instance IsBrief Output where
   brief op = case op of
-    OP_min            -> "mi"
-    OP_max            -> "mx"
-    OP_mean           -> "me"
-    OP_internal_min   -> "imi"
-    OP_internal_max   -> "imx"
-    OP_internal_mean  -> "ime"
+    OP_best    -> "best:time"
+    OP_worst   -> "worst:time"
+    OP_mean    -> "mean:time"
+    OP_i_best  -> "best:i:time"
+    OP_i_worst -> "worst:i:time"
+    OP_i_mean  -> "mean:i:time"
 
 instance IsQuery Output where
   mkQuery = const mempty
 
+outputUnit :: Output -> Unit
+outputUnit o = case o of
+    OP_best    -> U_GiBps
+    OP_worst   -> U_GiBps
+    OP_mean    -> U_GiBps
+    OP_i_best  -> U_GiBps
+    OP_i_worst -> U_GiBps
+    OP_i_mean  -> U_GiBps
+
 -- | retsricted to GiB/s for now
 calcOutput :: Output -> Vector Benchmark -> Datum
 calcOutput op = case op of
-    OP_min           -> calc_op bm_external_seconds min_1
-    OP_max           -> calc_op bm_external_seconds max_1
-    OP_mean          -> calc_op bm_external_seconds mean_1
-    OP_internal_min  -> calc_op bm_internal_seconds min_1
-    OP_internal_max  -> calc_op bm_internal_seconds max_1
-    OP_internal_mean -> calc_op bm_internal_seconds mean_1
+    OP_best    -> calc_op bm_external_seconds min_1
+    OP_worst   -> calc_op bm_external_seconds max_1
+    OP_mean    -> calc_op bm_external_seconds mean_1
+    OP_i_best  -> calc_op bm_internal_seconds min_1
+    OP_i_worst -> calc_op bm_internal_seconds max_1
+    OP_i_mean  -> calc_op bm_internal_seconds mean_1
   where
     calc_op :: (Benchmark->Double) -> (Double->[Double]->Double) -> Vector Benchmark -> Datum
     calc_op ext agg v0 = case V.uncons v0 of
@@ -572,8 +615,12 @@ input_bytes Benchmark{..} =
     [sz] -> Just $ fromInteger sz
     _    -> Nothing
 
-op_query :: (Output->Bool) -> [LabeledQuery]
-op_query = genLabeledQueries QD_output
+op_query :: (Output->Bool) -> LabeledQueries
+op_query p = LabeledQueries "output" Set.empty
+  [ LabeledQuery (fmt_t x) $ QueryDescriptor (const Nothing) $ Set.singleton x
+    | x <- [minBound..maxBound]
+    , p x
+    ]
 
 
 ----------------------------------------------------------------------------------------------------
@@ -583,9 +630,9 @@ op_query = genLabeledQueries QD_output
 tagToQuery :: Tag -> Query
 tagToQuery tg = LENS.set q_tags ([Set.fromList [tg]]) mempty
 
-genLabeledQueries :: HasQueryMethods a => QueryDescriptorL -> (a->Bool) -> [LabeledQuery]
-genLabeledQueries qdl p =
-    [ LabeledQuery (fmt_t x) $ QueryDescriptor $ \case
+genEOLabeledQueries :: HasQueryMethods a => QueryDescriptorL -> (a->Bool) -> LabeledQueries
+genEOLabeledQueries qdl p = LabeledQueries (fmt $ build qdl) Set.empty
+    [ LabeledQuery (fmt_t x) $ flip QueryDescriptor Set.empty $ \case
           qdl_ | qdl_==qdl -> Just $ QueryMethods x
                | otherwise -> Nothing
       | x <- [minBound..maxBound]

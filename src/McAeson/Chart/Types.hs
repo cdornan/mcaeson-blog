@@ -20,6 +20,7 @@ module McAeson.Chart.Types
   ) where
 
 import           Data.Default
+import qualified Data.Set                     as Set
 import           Data.Text(Text)
 import qualified Data.Text                          as T
 import qualified Data.Text.IO                       as T
@@ -45,14 +46,14 @@ postReport cs = do
     write_report ut =<< mapM extract cs
 
 extract :: Chart -> IO ChartData
-extract c = mk <$> mapM gen_series _c_series
+extract c = mk <$> mapM gen_series (_lqs_queries _c_series)
   where
     gen_series :: LabeledQuery -> IO [Datum]
-    gen_series LabeledQuery{..} = mapM (gen_datum _lq_label _lq_query) _c_values
+    gen_series LabeledQuery{..} = mapM (gen_datum _lq_label _lq_query) (_lqs_queries _c_values)
 
     gen_datum :: Text -> QueryDescriptor -> LabeledQuery -> IO Datum
     gen_datum slab qd0 lq = do
-        d <- calcOutput OP_min <$> queryBenchmarksWith QS_explicit root q
+        d <- calcOutput OP_best <$> queryBenchmarksWith QS_explicit root q
         fmtLn $
           ""   +|(padRightF 20 ' ' slab)          |+
           " "  +|(padRightF 20 ' ' $ _lq_label lq)|+
@@ -61,7 +62,7 @@ extract c = mk <$> mapM gen_series _c_series
           ""
         return d
       where
-        q = mkQuery $ qd0 <> _lq_query lq <> _lq_query _c_universe
+        q = mkQuery $ qd0 <> _lq_query lq <> universe (_uni_queries _c_universe)
 
     Chart{..} = c
 
@@ -128,45 +129,49 @@ post_filepath ut = loop 'a'
 ----------------------------------------------------------------------------------------------------
 
 mk_js_chart :: Int -> ChartData -> JSChart
-mk_js_chart i ChartData{..} =
-  JSChart
-    { _jsc_id     = ID $ "mcchart"+|i|+""
-    , _jsc_height = "1000px"
-    , _jsc_width  = "1000px"
-    , _jsc_header = header
-    , _jsc_footer = ""
-    , _jsc_xaxis  = xaxis
-    , _jsc_yaxis  = yaxis
-    , _jsc_lines  = lnes
-    }
-  where
-    header = Html $ fmt $ unlines_b
-      [ "<h1>"+|_c_heading|+"</h1>"
-      , "<p>"+|_c_blurb|+"</p>"
-      ]
-
-    xaxis =
-      XAxis
-        { _xaxis_title  = _c_x_title
-        , _xaxis_labels = map _lq_label _c_values
+mk_js_chart i ChartData{..} = case _uni_units $ _c_universe _cd_chart of
+    []  -> error "mk_js_chart: no units"
+    [u] ->
+      JSChart
+        { _jsc_id     = ID $ "mcchart"+|i|+""
+        , _jsc_height = "1000px"
+        , _jsc_width  = "1000px"
+        , _jsc_header = header
+        , _jsc_footer = ""
+        , _jsc_xaxis  = xaxis
+        , _jsc_yaxis  = yaxis
+        , _jsc_yaxis2 = Nothing
+        , _jsc_lines  = lnes
         }
-
-    yaxis =
-      YAxis
-        { _yaxis_title = _c_y_title
-        }
-
-    lnes :: [Line]
-    lnes = zipWith mk _c_series _cd_data
       where
-        mk :: LabeledQuery -> [Datum] -> Line
-        mk LabeledQuery{..} ds =
-            Line
-              { _line_label = _lq_label
-              , _line_data  = ds
-              }
+        header = Html $ fmt $ unlines_b
+          [ "<h1>"+|_c_heading|+"</h1>"
+          , "<p>"+|_c_blurb|+"</p>"
+          ]
+        xaxis =
+          XAxis
+            { _xaxis_title  = _lqs_label _c_values
+            , _xaxis_labels = map _lq_label $ _lqs_queries _c_values
+            }
 
-    Chart{..} = _cd_chart
+        yaxis =
+          YAxis
+            { _yaxis_title = fmt $ build u
+            }
+
+        lnes :: [Line]
+        lnes = zipWith mk (_lqs_queries _c_series) _cd_data
+          where
+            mk :: LabeledQuery -> [Datum] -> Line
+            mk LabeledQuery{..} ds =
+                Line
+                  { _line_label   = _lq_label
+                  , _line_yaxis2  = False
+                  , _line_data    = ds
+                  }
+
+        Chart{..} = _cd_chart
+    _ -> undefined -- multigraph
 
 
 ----------------------------------------------------------------------------------------------------
@@ -181,9 +186,14 @@ test_chart =
   Chart
     { _c_heading  = "test chart"
     , _c_blurb    = "functions and algoritms on giga/dt"
-    , _c_y_title  = "GiB/s"
-    , _c_x_title  = "function"
-    , _c_universe = universe "giga/dt" $ me_query (==ME_dt) ++ if_query (==IF_giga)
+    , _c_universe =
+        Universe
+          { _uni_units   = [U_GiBps]
+          , _uni_queries = LabeledQueries "giga/dt" (Set.fromList [OP_best]) $ concat
+              [ _lqs_queries $ me_query (==ME_dt)
+              , _lqs_queries $ if_query (==IF_giga)
+              ]
+          }
     , _c_series   = al_query every
     , _c_values   = fn_query every
     }

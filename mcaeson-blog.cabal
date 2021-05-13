@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7ac451beaa6000243d34dfeaafaeb1520dd12d2245538f95a9d177f9fa75b4d6
+-- hash: 35226eb32e7eeb44e650742c189d28db4ae485111ccf572725a47b6d20369d3d
 
 name:           mcaeson-blog
 version:        0.1.0.0
@@ -54,6 +54,7 @@ library
       array
     , base ==4.*
     , blaze-html
+    , bytestring
     , containers
     , data-default
     , directory
@@ -68,6 +69,7 @@ library
     , hsass
     , lens
     , mcaeson
+    , pandoc
     , pandoc-csv2table
     , pandoc-types
     , possibly
@@ -88,6 +90,7 @@ executable mcaeson-blog
       array
     , base ==4.*
     , blaze-html
+    , bytestring
     , containers
     , data-default
     , directory
@@ -103,6 +106,7 @@ executable mcaeson-blog
     , lens
     , mcaeson
     , mcaeson-blog
+    , pandoc
     , pandoc-csv2table
     , pandoc-types
     , possibly
@@ -123,6 +127,7 @@ executable mcaeson-report
       array
     , base ==4.*
     , blaze-html
+    , bytestring
     , containers
     , data-default
     , directory
@@ -138,6 +143,7 @@ executable mcaeson-report
     , lens
     , mcaeson
     , mcaeson-blog
+    , pandoc
     , pandoc-csv2table
     , pandoc-types
     , possibly

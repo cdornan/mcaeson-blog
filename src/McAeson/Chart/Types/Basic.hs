@@ -11,6 +11,7 @@
 
 module McAeson.Chart.Types.Basic where
 
+import qualified Data.ByteString.Lazy     as LBS
 import           Data.String
 import           Data.Text(Text)
 import           Fmt
@@ -22,6 +23,13 @@ newtype Html =
     }
   deriving stock (Show)
   deriving newtype (Buildable,IsString,Monoid,Semigroup)
+
+newtype CSV =
+  CSV
+    { getCSV :: LBS.ByteString
+    }
+  deriving stock (Show)
+  deriving newtype (IsString,Monoid,Semigroup)
 
 newtype ID =
   ID

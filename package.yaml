@@ -15,6 +15,7 @@ dependencies:
 - base == 4.*
 - array
 - blaze-html
+- bytestring
 - containers
 - data-default
 - directory
@@ -30,6 +31,7 @@ dependencies:
 - lens
 - mcaeson
 - possibly
+- pandoc
 - pandoc-types
 - pandoc-csv2table
 - text
