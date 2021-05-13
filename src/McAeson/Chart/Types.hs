@@ -52,7 +52,7 @@ extract c = mk <$> mapM gen_series (_lqs_queries _c_series)
 
     gen_datum :: Text -> QueryDescriptor -> LabeledQuery -> IO Datum
     gen_datum slab qd0 lq = do
-        d <- calcOutput OP_e_best <$> queryBenchmarksWith QS_explicit root q
+        d <- calcOutput OP_e_best_time <$> queryBenchmarksWith QS_explicit root q
         fmtLn $
           ""   +|(padRightF 20 ' ' slab)          |+
           " "  +|(padRightF 20 ' ' $ _lq_label lq)|+
@@ -183,8 +183,14 @@ mk_js_chart i ChartData{..} = case _uni_units $ _c_universe _cd_chart of
 -- test
 ----------------------------------------------------------------------------------------------------
 
+enable_multi :: Bool
+enable_multi = False
+
 test :: IO ()
-test = postReport [test_chart,test_multi_chart]
+test = postReport $ concat
+  [ [ test_chart ]
+  , [ test_multi_chart | enable_multi ]
+  ]
 
 test_chart :: Chart
 test_chart =
@@ -200,7 +206,7 @@ giga_dt_GiBps_universe :: Universe
 giga_dt_GiBps_universe =
     Universe
       { _uni_units   = [U_GiBps]
-      , _uni_queries = LabeledQueries "giga/dt" (Set.fromList [OP_e_best]) $ concat
+      , _uni_queries = LabeledQueries "giga/dt" (Set.fromList [OP_e_best_time]) $ concat
           [ _lqs_queries $ me_query (==ME_dt)
           , _lqs_queries $ if_query (==IF_giga)
           ]
@@ -219,13 +225,13 @@ test_multi_chart =
 best_time_and_space :: Output -> Bool
 best_time_and_space op = case op of
   -- external times
-  OP_e_best           -> True
-  OP_e_worst          -> False
-  OP_e_mean           -> False
+  OP_e_best_time      -> True
+  OP_e_wrst_time      -> False
+  OP_e_mean_time      -> False
   -- internal times
-  OP_i_best           -> True
-  OP_i_worst          -> False
-  OP_i_mean           -> False
+  OP_i_best_time      -> True
+  OP_i_wrst_time      -> False
+  OP_i_mean_time      -> False
   -- memory: best
   OP_e_best_max_res   -> True
   OP_e_best_reclaims  -> False

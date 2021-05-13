@@ -138,8 +138,9 @@ class IsQuery a where
 class HasQueryMethods a => IsLabeledQuery a where
   mkLabeledQueries :: (a->Bool) -> LabeledQueries
 
-class IsBrief a where
+class Buildable a => IsBrief a where
   brief :: a -> Text
+  brief = fmt . build
 
 class (Bounded a,IsBrief a,Buildable a,Enum a,IsQuery a,Show a) => HasQueryMethods a
 
@@ -157,7 +158,6 @@ deriving instance Show QueryMethods
 
 data Unit
   = U_GiBps
-  | U_GiBpGiB
   | U_GiB
   | U_count
   deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
@@ -541,13 +541,13 @@ instance IsLabeledQuery Output where mkLabeledQueries = op_query
 
 data Output
   -- external times
-  = OP_e_best
-  | OP_e_worst
-  | OP_e_mean
+  = OP_e_best_time
+  | OP_e_wrst_time
+  | OP_e_mean_time
   -- internal times
-  | OP_i_best
-  | OP_i_worst
-  | OP_i_mean
+  | OP_i_best_time
+  | OP_i_wrst_time
+  | OP_i_mean_time
   -- memory: best
   | OP_e_best_max_res
   | OP_e_best_reclaims
@@ -570,88 +570,30 @@ data Output
   | OP_i_mean_copied
   | OP_i_mean_num_gcs
   deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
-  deriving anyclass (EnumText, HasQueryMethods)
+  deriving anyclass (IsBrief, EnumText, HasQueryMethods)
   deriving (Buildable, TextParsable)
     via UsingEnumText Output
-
-instance IsBrief Output where
-  brief op = case op of
-    -- external times
-    OP_e_best           -> "e:best:time"
-    OP_e_worst          -> "e:wrst:time"
-    OP_e_mean           -> "e:mean:time"
-    -- internal times
-    OP_i_best           -> "i:best:time"
-    OP_i_worst          -> "i:wrst:time"
-    OP_i_mean           -> "i:mean:time"
-    -- memory: best
-    OP_e_best_max_res   -> "e:best:max-residency"
-    OP_e_best_reclaims  -> "e:best:reclaims"
-    OP_e_best_ctx_sws   -> "e:best:context-switches"
-    OP_i_best_allocated -> "i:best:allocated"
-    OP_i_best_copied    -> "i:best:copied"
-    OP_i_best_num_gcs   -> "i:best:num-gcs"
-    -- memory: worst
-    OP_e_wrst_max_res   -> "e:wrst:max-residency"
-    OP_e_wrst_reclaims  -> "e:wrst:reclaims"
-    OP_e_wrst_ctx_sws   -> "e:wrst:context-switches"
-    OP_i_wrst_allocated -> "i:wrst:allocated"
-    OP_i_wrst_copied    -> "i:wrst:copied"
-    OP_i_wrst_num_gcs   -> "i:wrst:num-gcs"
-    -- memory: mean
-    OP_e_mean_max_res   -> "e:mean:max-residency"
-    OP_e_mean_reclaims  -> "e:mean:reclaims"
-    OP_e_mean_ctx_sws   -> "e:mean:context-switches"
-    OP_i_mean_allocated -> "i:mean:allocated"
-    OP_i_mean_copied    -> "i:mean:copied"
-    OP_i_mean_num_gcs   -> "i:mean:num-gcs"
 
 instance IsQuery Output where
   mkQuery = const mempty
 
 outputUnit :: Output -> Unit
-outputUnit o = case o of
-    -- external times
-    OP_e_best           -> U_GiBps
-    OP_e_worst          -> U_GiBps
-    OP_e_mean           -> U_GiBps
-    -- internal times
-    OP_i_best           -> U_GiBps
-    OP_i_worst          -> U_GiBps
-    OP_i_mean           -> U_GiBps
-    -- memory: best
-    OP_e_best_max_res   -> U_GiB
-    OP_e_best_reclaims  -> U_GiB
-    OP_e_best_ctx_sws   -> U_count
-    OP_i_best_allocated -> U_GiB
-    OP_i_best_copied    -> U_GiB
-    OP_i_best_num_gcs   -> U_count
-    -- memory: worst
-    OP_e_wrst_max_res   -> U_GiB
-    OP_e_wrst_reclaims  -> U_GiB
-    OP_e_wrst_ctx_sws   -> U_count
-    OP_i_wrst_allocated -> U_GiB
-    OP_i_wrst_copied    -> U_GiB
-    OP_i_wrst_num_gcs   -> U_count
-    -- memory: mean
-    OP_e_mean_max_res   -> U_GiB
-    OP_e_mean_reclaims  -> U_GiB
-    OP_e_mean_ctx_sws   -> U_count
-    OP_i_mean_allocated -> U_GiB
-    OP_i_mean_copied    -> U_GiB
-    OP_i_mean_num_gcs   -> U_count
+outputUnit = fst . calc_output
+
+calcOutput :: Output -> Vector Benchmark -> Datum
+calcOutput = snd . calc_output
 
 -- | retsricted to GiB/s for now
-calcOutput :: Output -> Vector Benchmark -> Datum
-calcOutput op = case op of
+calc_output :: Output -> (Unit,Vector Benchmark -> Datum)
+calc_output op = case op of
     -- external times
-    OP_e_best           -> calc_op  bm_external_seconds min_1
-    OP_e_worst          -> calc_op  bm_external_seconds max_1
-    OP_e_mean           -> calc_op  bm_external_seconds avg_1
+    OP_e_best_time      -> calc_op  bm_external_seconds min_1
+    OP_e_wrst_time      -> calc_op  bm_external_seconds max_1
+    OP_e_mean_time      -> calc_op  bm_external_seconds avg_1
     -- internal times
-    OP_i_best           -> calc_op  bm_internal_seconds min_1
-    OP_i_worst          -> calc_op  bm_internal_seconds max_1
-    OP_i_mean           -> calc_op  bm_internal_seconds avg_1
+    OP_i_best_time      -> calc_op  bm_internal_seconds min_1
+    OP_i_wrst_time      -> calc_op  bm_internal_seconds max_1
+    OP_i_mean_time      -> calc_op  bm_internal_seconds avg_1
     -- memory: best
     OP_e_best_max_res   -> calc_op' gib _bm_max_res     min_1
     OP_e_best_reclaims  -> calc_op' fri _bm_reclaims    min_1
@@ -674,31 +616,38 @@ calcOutput op = case op of
     OP_i_mean_copied    -> calc_op' gib _bm_copied      avg_1
     OP_i_mean_num_gcs   -> calc_op' fri _bm_num_gcs     avg_1
   where
-    calc_op' :: (a->Double) -> (Benchmark->a) -> (Double->[Double]->Double) -> Vector Benchmark -> Datum
-    calc_op' tod prj = calc_op (tod . prj)
+    calc_op' :: (Unit,a->Double)
+             -> (Benchmark->a)
+             -> (Double->[Double]->Double)
+             -> (Unit,Vector Benchmark -> Datum)
+    calc_op' (u,tod) prj = calc_op (u,tod . prj)
 
-    gib :: ByteCount -> Double
-    gib bc = fri bc / gibi
+    gib :: (Unit,ByteCount -> Double)
+    gib = (U_GiB,\bc -> snd fri bc / gibi)
 
-    fri :: Integral a => a -> Double
-    fri = fromIntegral
+    fri :: Integral a => (Unit,a->Double)
+    fri = (U_count,fromIntegral)
 
-    calc_op :: (Benchmark->Double) -> (Double->[Double]->Double) -> Vector Benchmark -> Datum
-    calc_op ext agg v0 = case V.uncons v0 of
-        Nothing        -> NoDatum
-        Just (bm,bm_v) -> Datum $ agg (ext bm) $ V.toList $ V.map ext bm_v
+    calc_op :: (Unit,Benchmark->Double)
+            -> (Double->[Double]->Double)
+            -> (Unit,Vector Benchmark -> Datum)
+    calc_op (u,ext) agg = (u,f)
+      where
+        f v0 = case V.uncons v0 of
+          Nothing        -> NoDatum
+          Just (bm,bm_v) -> Datum $ agg (ext bm) $ V.toList $ V.map ext bm_v
 
-    bm_external_seconds :: Benchmark -> Double
-    bm_external_seconds bm = calc bm
+    bm_external_seconds :: (Unit,Benchmark -> Double)
+    bm_external_seconds = (U_GiBps,calc)
       where
         calc :: Benchmark -> Double
-        calc = gibps . (/1000) . fromIntegral . getMilisecondsReal . _bm_real
+        calc bm = gibps . (/1000) . fromIntegral . getMilisecondsReal . _bm_real $ bm
+          where
+            gibps :: Double -> Double
+            gibps secs = fromMaybe 0 (input_bytes bm) / (gibi*secs)
 
-        gibps :: Double -> Double
-        gibps secs = fromMaybe 0 (input_bytes bm) / (gibi*secs)
-
-    bm_internal_seconds :: Benchmark -> Double
-    bm_internal_seconds = getSeconds . _bm_time
+    bm_internal_seconds :: (Unit,Benchmark -> Double)
+    bm_internal_seconds = (U_GiBps,getSeconds . _bm_time)
 
     min_1 :: Double -> [Double] -> Double
     min_1 d ds = L.minimum $ d:ds
