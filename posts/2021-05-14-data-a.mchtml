@@ -1,0 +1,167 @@
+---
+title: Dashboard for (2021-W19)
+subtl: 2021-05-14
+issue: 2
+---
+
+
+<h1>test chart</h1>
+<p>functions and algoritms on giga/dt (best)</p>
+
+<div id="mcchart0" style="height:1000px;width=1000px;"></div>
+
+<script>
+
+    nv.addGraph(function() {
+        var chart = nv.models.lineChart()
+                      .useInteractiveGuideline(true)
+                      .yDomain([0.0,0.1908445303949217]);
+        var data;
+
+        var x_format = function(num) {
+            var labels = ["string-count","tsearch","simple-json","aeson-value"];
+
+            return labels[num];
+        };
+
+        var y_format = function(d) {
+          if (d==null) {
+            return "";
+          } else {
+            return d3.format(',.2f')(d);
+          }
+        };
+
+        chart.xAxis
+            .axisLabel("function")
+            .tickFormat(x_format)
+        ;
+
+        chart.yAxis
+            .axisLabel("GiBps")
+            .tickFormat(y_format)
+        ;
+
+        data =
+          
+          [ { values      : [{x:0,y:0.19}, {x:1,y:0.10}, {x:2,y:0.02}, {x:3,y:0.02}]
+            , key         : "tyro"
+            , strokeWidth : 3.5
+            }
+
+          , { values      : [{x:0,y:0.03}, {x:1,y:0.05}, {x:2,y:null}, {x:3,y:null}]
+            , key         : "pheres"
+            , strokeWidth : 3.5
+            }
+
+          , { values      : [{x:0,y:null}, {x:1,y:null}, {x:2,y:null}, {x:3,y:null}]
+            , key         : "medea"
+            , strokeWidth : 3.5
+            }
+
+          , { values      : [{x:0,y:0.02}, {x:1,y:0.04}, {x:2,y:null}, {x:3,y:null}]
+            , key         : "aeson"
+            , strokeWidth : 3.5
+            }
+
+          , { values      : [{x:0,y:null}, {x:1,y:0.03}, {x:2,y:null}, {x:3,y:null}]
+            , key         : "jsonsimd"
+            , strokeWidth : 3.5
+            }
+          ];
+
+        d3.select('#mcchart0').append('svg')
+            .datum(data)
+            .call(chart)
+        ;
+
+        nv.utils.windowResize(chart.update);
+
+        return chart;
+    });
+
+</script>
+
+
+<h1>test multi chart</h1>
+<p>algorithm time and space usage on sc/giga/dt (best)</p>
+
+<div id="mcchart1" style="height:1000px;width=1000px;"></div>
+
+<script>
+
+    nv.addGraph(function() {
+        var chart = nv.models.multiChart()
+                      .useInteractiveGuideline(true)
+                      .yDomain([0.0,3.028887385622628e-2]);
+        var data;
+
+        var x_format = function(num) {
+            var labels = ["tyro","pheres","medea","aeson","jsonsimd"];
+
+            return labels[num];
+        };
+
+        var y_format = function(d) {
+          if (d==null) {
+            return "";
+          } else {
+            return d3.format(',.2f')(d);
+          }
+        };
+
+        chart.xAxis
+            .axisLabel("algorithm")
+            .tickFormat(x_format)
+        ;
+
+        chart.yAxis1
+            .axisLabel("GiBps")
+            .tickFormat(y_format)
+        ;
+
+        chart.yAxis2
+            .axisLabel("GiB")
+            .tickFormat(y_format)
+        ;
+
+        data =
+          
+          [ { values      : [{x:0,y:0.02}, {x:1,y:0.03}, {x:2,y:null}, {x:3,y:0.02}, {x:4,y:0.03}]
+            , key         : "e-best-time"
+            , strokeWidth : 3.5
+            }
+
+          , { values      : [{x:0,y:0.02}, {x:1,y:0.03}, {x:2,y:null}, {x:3,y:0.02}, {x:4,y:0.03}]
+            , key         : "i-best-time"
+            , strokeWidth : 3.5
+            }
+
+          , { values      : [{x:0,y:0.02}, {x:1,y:0.03}, {x:2,y:null}, {x:3,y:0.02}, {x:4,y:0.03}]
+            , key         : "e-best-max-res"
+            , strokeWidth : 3.5
+            }
+
+          , { values      : [{x:0,y:0.02}, {x:1,y:0.03}, {x:2,y:null}, {x:3,y:0.02}, {x:4,y:0.03}]
+            , key         : "i-best-allocated"
+            , strokeWidth : 3.5
+            }
+
+          , { values      : [{x:0,y:0.02}, {x:1,y:0.03}, {x:2,y:null}, {x:3,y:0.02}, {x:4,y:0.03}]
+            , key         : "i-best-copied"
+            , strokeWidth : 3.5
+            }
+          ];
+
+        d3.select('#mcchart1').append('svg')
+            .datum(data)
+            .call(chart)
+        ;
+
+        nv.utils.windowResize(chart.update);
+
+        return chart;
+    });
+
+</script>
+

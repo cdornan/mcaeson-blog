@@ -30,35 +30,49 @@ instance Default NVD3 where
   def = NVD3
 
 instance HasJSChart NVD3 where
-  generate nvd3 = gen_html . mk_sigma nvd3
+  generate nvd3 jsc = gen_html (mk_phi nvd3 jsc) tpl
+    where
+      tpl = maybe template_single (const template_multi) $ _jsc_yaxis2 jsc
 
-mk_sigma :: NVD3 -> JSChart -> Param -> Text
-mk_sigma _ JSChart{..} p = case _jsc_yaxis2 of
-  Nothing ->
-    fmt $ case p of
-      P_header        -> build _jsc_header
-      P_footer        -> build _jsc_footer
-      P_id            -> build _jsc_id
-      P_height        -> build _jsc_height
-      P_width         -> build _jsc_width
-      P_labels        -> jsArray $ _xaxis_labels                _jsc_xaxis
-      P_x_axis_title  -> build   $ _xaxis_title                 _jsc_xaxis
-      P_y_axis_title  -> build   $ _yaxis_title                 _jsc_yaxis
-      P_min_y         -> build   $ min_y $ concatMap _line_data _jsc_lines
-      P_max_y         -> build   $ max_y $ concatMap _line_data _jsc_lines
-      P_data          -> d3Data                                 _jsc_lines
-  Just _ -> undefined -- multigraph
+mk_phi :: NVD3 -> JSChart -> Param -> Text
+mk_phi _ JSChart{..} p = fmt $ case p of
+    P_header        -> build                            _jsc_header
+    P_footer        -> build                            _jsc_footer
+    P_id            -> build                            _jsc_id
+    P_height        -> build                            _jsc_height
+    P_width         -> build                            _jsc_width
+    P_labels        -> jsArray $ _xaxis_labels          _jsc_xaxis
+    P_x_axis_title  -> build   $ _xaxis_title           _jsc_xaxis
+    P_y_axis_title  -> build   $ _yaxis_title           _jsc_yaxis
+    P_y_axis2_title -> maybe "" (build . _yaxis_title)  _jsc_yaxis2
+    P_min_y         -> build   $ min_y (Just u)         _jsc_lines
+    P_max_y         -> build   $ max_y (Just u)         _jsc_lines
+    P_min_y2        -> build   $ min_y mb_u             _jsc_lines
+    P_max_y2        -> build   $ max_y mb_u             _jsc_lines
+    P_data          -> d3Data u mb_u                    _jsc_lines
+  where
+    u :: Unit
+    u = _yaxis_unit _jsc_yaxis
 
-min_y, max_y :: [Datum] -> Double
-min_y ds0 = case [ d | Datum d<-ds0 ] of
-  [] -> 0
-  ds -> min 0 $ minimum ds
-max_y dtms = case [ d | Datum d<-dtms ] of
-  [] -> 0
-  ds -> maximum ds
+    mb_u :: Maybe Unit
+    mb_u = _yaxis_unit <$> _jsc_yaxis2
 
-gen_html :: (Param->Text) -> Html
-gen_html = Html . flip subst template
+min_y, max_y :: Maybe Unit -> [Line] -> Double
+min_y mb_u = maybe (const 0) calc mb_u
+  where
+    calc :: Unit -> [Line] -> Double
+    calc u lns = case [ d | Datum d u'<-concatMap _line_data lns, u==u' ] of
+      [] -> 0
+      ds -> min 0 $ minimum ds
+max_y mb_u = maybe (const 0) calc mb_u
+  where
+    calc :: Unit -> [Line] -> Double
+    calc u lns = case [ d | Datum d u'<-concatMap _line_data lns, u==u' ] of
+      [] -> 0
+      ds -> maximum ds
+
+gen_html :: (Param->Text) -> Template Param -> Html
+gen_html phi = Html . subst phi
 
 data Param
   = P_header
@@ -69,16 +83,19 @@ data Param
   | P_labels
   | P_x_axis_title
   | P_y_axis_title
+  | P_y_axis2_title
   | P_min_y
   | P_max_y
+  | P_min_y2
+  | P_max_y2
   | P_data
   deriving stock (Bounded, Enum, Eq, Ord, Show)
   deriving anyclass (EnumText)
   deriving (Buildable, TextParsable)
     via UsingEnumText Param
 
-template :: Template Param
-template = Template [here|
+template_single :: Template Param
+template_single = Template [here|
 <<header>>
 <div id="<<id>>" style="height:<<height>>;width=<<width>>;"></div>
 
@@ -100,7 +117,7 @@ template = Template [here|
           if (d==null) {
             return "";
           } else {
-            return d3.format(',.2f')(d);
+            return d3.format(',.3f')(d);
           }
         };
 
@@ -111,6 +128,65 @@ template = Template [here|
 
         chart.yAxis
             .axisLabel("<<y-axis-title>>")
+            .tickFormat(y_format)
+        ;
+
+        data =
+          <<data>>
+        d3.select('#<<id>>').append('svg')
+            .datum(data)
+            .call(chart)
+        ;
+
+        nv.utils.windowResize(chart.update);
+
+        return chart;
+    });
+
+</script>
+<<footer>>
+|]
+
+template_multi :: Template Param
+template_multi = Template [here|
+<<header>>
+<div id="<<id>>" style="height:<<height>>;width=<<width>>;"></div>
+
+<script>
+
+    nv.addGraph(function() {
+        var chart = nv.models.multiChart()
+                      .useInteractiveGuideline(true);
+                      .yDomain1([<<min-y>>,<<max-y>>]);
+                      .yDomain2([<<min-y2>>,<<max-y2>>]);
+        var data;
+
+        var x_format = function(num) {
+            var labels = <<labels>>;
+
+            return labels[num];
+        };
+
+        var y_format = function(d) {
+          if (d==null) {
+            return "";
+          } else {
+            return d3.format(',.3f')(d);
+          }
+        };
+
+        chart.xAxis
+            .axisLabel("<<x-axis-title>>")
+            .tickFormat(x_format)
+        ;
+
+        chart.yAxis1
+            .axisLabel("<<y-axis-title>>")
+            .tickFormat(y_format)
+        ;
+
+        chart.yAxis2
+            .axisLabel("<<y-axis2-title>>")
             .tickFormat(y_format)
         ;
 

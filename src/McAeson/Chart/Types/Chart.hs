@@ -56,7 +56,14 @@ data Universe =
 data ChartData =
   ChartData
     { _cd_chart :: Chart
-    , _cd_data  :: [[Datum]]
+    , _cd_data  :: [Series]
+    }
+  deriving (Show)
+
+data Series =
+  Series
+    { _s_unit :: Unit
+    , _s_data :: [Datum]
     }
   deriving (Show)
 
@@ -150,20 +157,6 @@ data QueryMethods = forall a . HasQueryMethods a =>
     }
 
 deriving instance Show QueryMethods
-
-
-----------------------------------------------------------------------------------------------------
--- Unit
-----------------------------------------------------------------------------------------------------
-
-data Unit
-  = U_GiBps
-  | U_GiB
-  | U_count
-  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
-  deriving anyclass (EnumText)
-  deriving (Buildable, TextParsable)
-    via UsingEnumText Unit
 
 
 ----------------------------------------------------------------------------------------------------
@@ -635,7 +628,7 @@ calc_output op = case op of
       where
         f v0 = case V.uncons v0 of
           Nothing        -> NoDatum
-          Just (bm,bm_v) -> Datum $ agg (ext bm) $ V.toList $ V.map ext bm_v
+          Just (bm,bm_v) -> flip Datum u $ agg (ext bm) $ V.toList $ V.map ext bm_v
 
     bm_external_seconds :: (Unit,Benchmark -> Double)
     bm_external_seconds = (U_GiBps,calc)

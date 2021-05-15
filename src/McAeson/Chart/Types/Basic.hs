@@ -15,6 +15,7 @@ import qualified Data.ByteString.Lazy     as LBS
 import           Data.String
 import           Data.Text(Text)
 import           Fmt
+import           Text.Enum.Text
 
 
 newtype Html =
@@ -68,10 +69,19 @@ newtype Javascript =
 
 data Datum
   = NoDatum
-  | Datum Double
+  | Datum Double Unit
   deriving stock (Show)
 
 instance Buildable Datum where
   build = \case
-    NoDatum -> "null"
-    Datum d -> fixedF 2 d
+    NoDatum   -> "null"
+    Datum d _ -> fixedF 2 d
+
+data Unit
+  = U_GiBps
+  | U_GiB
+  | U_count
+  deriving stock (Bounded, Enum, Eq, Ord, Show)
+  deriving anyclass (EnumText)
+  deriving (Buildable, TextParsable)
+    via UsingEnumText Unit

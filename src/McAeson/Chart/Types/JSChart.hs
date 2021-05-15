@@ -44,13 +44,14 @@ data XAxis =
 data YAxis =
   YAxis
     { _yaxis_title :: Text    -- ^ vertically oriented title for Y axis
+    , _yaxis_unit  :: Unit    -- ^ units for this axis
     }
   deriving (Show)
 
 data Line =
   Line
     { _line_label  :: Text     -- ^ label for the line
-    , _line_yaxis2 :: Bool     -- ^ True => for yaxis2
+    -- , _line_unit   :: Unit     -- ^ True => for yaxis2
     , _line_data   :: [Datum]  -- ^ the data (to match numbet of x-axis labels)
     }
   deriving (Show)
@@ -65,26 +66,26 @@ instance Default JSChart where
       , _jsc_header = "<h2>test chart0</h2>"
       , _jsc_footer = ""
       , _jsc_xaxis  = XAxis "x thingies" [fromString [c] | c<-['a'..'z']]
-      , _jsc_yaxis  = YAxis "y thingies"
+      , _jsc_yaxis  = YAxis "y thingies" U_GiBps
       , _jsc_yaxis2 = Nothing
       , _jsc_lines  = [l1,l2,l3]
       }
     where
       l1, l2, l3 :: Line
 
-      l1 = Line "line 1" False $ map f1 is
+      l1 = Line "line 1" $ map f1 is
 
-      l2 = Line "line 2" False $ map f2 is
+      l2 = Line "line 2" $ map f2 is
 
-      l3 = Line "line 3" False $ map f3 is
+      l3 = Line "line 3" $ map f3 is
 
       f1, f2, f3 :: Int -> Datum
 
-      f1 i = if i `mod` 10 == 0 then NoDatum else Datum $ fromIntegral i
+      f1 i = if i `mod` 10 == 0 then NoDatum else Datum (fromIntegral i) U_GiBps
 
-      f2 i = Datum $ fromIntegral $ 2*i
+      f2 i = Datum (fromIntegral $ 2*i) U_GiBps
 
-      f3 i = Datum $ fromIntegral $ 3*i
+      f3 i = Datum (fromIntegral $ 3*i) U_GiBps
 
       is :: [Int]
       is = [1..26]

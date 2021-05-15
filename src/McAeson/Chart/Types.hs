@@ -20,7 +20,8 @@ module McAeson.Chart.Types
   ) where
 
 import           Data.Default
-import qualified Data.Set                     as Set
+import           Data.List                          as L
+import qualified Data.Set                           as Set
 import           Data.Text(Text)
 import qualified Data.Text                          as T
 import qualified Data.Text.IO                       as T
@@ -45,32 +46,30 @@ postReport cs = do
     write_report ut =<< mapM extract cs
 
 extract :: Chart -> IO ChartData
-extract c = mk <$> mapM gen_series (_lqs_queries _c_series)
+extract c = ChartData c <$> mapM gen_series (_lqs_queries _c_series)
   where
-    gen_series :: LabeledQuery -> IO [Datum]
-    gen_series LabeledQuery{..} = mapM (gen_datum _lq_label _lq_query) (_lqs_queries _c_values)
+    gen_series :: LabeledQuery -> IO Series
+    gen_series LabeledQuery{..} = do
+      case L.nub $ map outputUnit ops of
+        [u] -> Series u <$> mapM (gen_datum _lq_label _lq_query) (_lqs_queries _c_values)
+        _   -> fail $ "series "+|_lq_label|+" with conflicting outputs: "+|unwordsF ops|+""
+      where
+        ops = Set.toList $ getOutput _lq_query
 
     gen_datum :: Text -> QueryDescriptor -> LabeledQuery -> IO Datum
     gen_datum slab qd0 lq = do
         d <- calcOutput OP_e_best_time <$> queryBenchmarksWith QS_explicit root q
         fmtLn $
-          ""   +|(padRightF 20 ' ' slab)          |+
+          ""   +|(padRightF 20 ' '   slab        )|+
           " "  +|(padRightF 20 ' ' $ _lq_label lq)|+
-          " : "+|(padRightF 20 ' ' d)             |+
-          " "  +|q                                |+
+          " : "+|(padRightF 20 ' '   d           )|+
+          " "  +|                    q            |+
           ""
         return d
       where
         q = mkQuery $ qd0 <> _lq_query lq <> universe (_uni_queries _c_universe)
 
     Chart{..} = c
-
-    mk :: [[Datum]] -> ChartData
-    mk dz =
-      ChartData
-        { _cd_chart = c
-        , _cd_data  = dz
-        }
 
 
 ----------------------------------------------------------------------------------------------------
@@ -132,7 +131,7 @@ mk_js_chart i ChartData{..} = case _uni_units $ _c_universe _cd_chart of
     []     -> error "mk_js_chart: no units"
     [u]    -> mk u Nothing
     [u,u'] -> mk u $ Just u'
-    _   -> undefined -- multigraph
+    _      -> error "graphs with more than three unit types not supported (yet)"
   where
     mk :: Unit -> Maybe Unit -> JSChart
     mk u mb_u2 =
@@ -162,12 +161,11 @@ mk_js_chart i ChartData{..} = case _uni_units $ _c_universe _cd_chart of
         lnes :: [Line]
         lnes = zipWith mk_ln (_lqs_queries _c_series) _cd_data
           where
-            mk_ln :: LabeledQuery -> [Datum] -> Line
-            mk_ln LabeledQuery{..} ds =
+            mk_ln :: LabeledQuery -> Series -> Line
+            mk_ln LabeledQuery{..} sz =
                 Line
                   { _line_label   = _lq_label
-                  , _line_yaxis2  = False
-                  , _line_data    = ds
+                  , _line_data    = _s_data sz
                   }
 
         Chart{..} = _cd_chart
@@ -176,6 +174,7 @@ mk_js_chart i ChartData{..} = case _uni_units $ _c_universe _cd_chart of
     yaxis u =
       YAxis
         { _yaxis_title = fmt $ build u
+        , _yaxis_unit  = u
         }
 
 
@@ -184,7 +183,7 @@ mk_js_chart i ChartData{..} = case _uni_units $ _c_universe _cd_chart of
 ----------------------------------------------------------------------------------------------------
 
 enable_multi :: Bool
-enable_multi = False
+enable_multi = True
 
 test :: IO ()
 test = postReport $ concat
