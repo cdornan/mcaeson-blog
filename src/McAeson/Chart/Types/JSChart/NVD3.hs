@@ -61,13 +61,13 @@ min_y, max_y :: Maybe Unit -> [Line] -> Double
 min_y mb_u = maybe (const 0) calc mb_u
   where
     calc :: Unit -> [Line] -> Double
-    calc u lns = case [ d | Datum d u'<-concatMap _line_data lns, u==u' ] of
+    calc u lns = case [ d | Datum d u' _<-concatMap _line_data lns, u==u' ] of
       [] -> 0
       ds -> min 0 $ minimum ds
 max_y mb_u = maybe (const 0) calc mb_u
   where
     calc :: Unit -> [Line] -> Double
-    calc u lns = case [ d | Datum d u'<-concatMap _line_data lns, u==u' ] of
+    calc u lns = case [ d | Datum d u' _<-concatMap _line_data lns, u==u' ] of
       [] -> 0
       ds -> maximum ds
 
@@ -97,13 +97,14 @@ data Param
 template_single :: Template Param
 template_single = Template [here|
 <<header>>
-<div id="<<id>>" style="height:<<height>>;width=<<width>>;"></div>
+<div id="<<id>>" style="height:<<height>>;"></div>
 
 <script>
 
     nv.addGraph(function() {
         var chart = nv.models.lineChart()
                       .useInteractiveGuideline(true)
+                      .margin({right: 45})
                       .yDomain([<<min-y>>,<<max-y>>]);
         var data;
 
@@ -150,14 +151,15 @@ template_single = Template [here|
 template_multi :: Template Param
 template_multi = Template [here|
 <<header>>
-<div id="<<id>>" style="height:<<height>>;width=<<width>>;"></div>
+<div id="<<id>>" style="height:<<height>>;"></div>
 
 <script>
 
     nv.addGraph(function() {
         var chart = nv.models.multiChart()
-                      .useInteractiveGuideline(true);
-                      .yDomain1([<<min-y>>,<<max-y>>]);
+                      .useInteractiveGuideline(true)
+                      .margin({right: 90})
+                      .yDomain1([<<min-y>>,<<max-y>>])
                       .yDomain2([<<min-y2>>,<<max-y2>>]);
         var data;
 

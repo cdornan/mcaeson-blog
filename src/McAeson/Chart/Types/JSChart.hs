@@ -81,11 +81,11 @@ instance Default JSChart where
 
       f1, f2, f3 :: Int -> Datum
 
-      f1 i = if i `mod` 10 == 0 then NoDatum else Datum (fromIntegral i) U_GiBps
+      f1 i = if i `mod` 10 == 0 then NoDatum else Datum (fromIntegral i) U_GiBps 1
 
-      f2 i = Datum (fromIntegral $ 2*i) U_GiBps
+      f2 i = Datum (fromIntegral $ 2*i) U_GiBps 1
 
-      f3 i = Datum (fromIntegral $ 3*i) U_GiBps
+      f3 i = Datum (fromIntegral $ 3*i) U_GiBps 1
 
       is :: [Int]
       is = [1..26]

@@ -122,12 +122,27 @@ instance IsQuery QueryDescriptor where
         , Just qm <- [f qdl]
         ]
 
+instance Buildable QueryDescriptor where
+  build QueryDescriptor{..} = unlinesF $ map b_qd [minBound..maxBound] ++ [b_op]
+    where
+      b_qd :: QueryDescriptorL -> Builder
+      b_qd qdl = b_ln (build qdl) $ case getQueryDescriptor qdl of
+        Nothing               -> "-"
+        Just (QueryMethods x) -> build x
+
+      b_op :: Builder
+      b_op = b_ln "output" $ unwordsF $ Set.toList getOutput
+
+      b_ln :: Builder -> Builder -> Builder
+      b_ln lab val = padRightF 12 ' ' lab <> " : " <> val
+
 data QueryDescriptorL
   = QD_installation
   | QD_machine
   | QD_function
   | QD_algorithm
   | QD_input
+  | QD_gc_stats
   | QD_version
   | QD_compiler
   | QD_os
@@ -330,6 +345,28 @@ if_to_tag = \case
 
 if_query :: (InputFile->Bool) -> LabeledQueries
 if_query = genEOLabeledQueries QD_input
+
+
+----------------------------------------------------------------------------------------------------
+-- GCStats
+----------------------------------------------------------------------------------------------------
+
+instance IsLabeledQuery GCStats where mkLabeledQueries = gs_query
+
+data GCStats = GCS_with_gc_stats
+  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
+  deriving anyclass (EnumText, HasQueryMethods)
+  deriving (Buildable, TextParsable)
+    via UsingEnumText GCStats
+
+instance IsBrief GCStats where
+  brief = fmt . build . const TG_rts_gc_stats
+
+instance IsQuery GCStats where
+  mkQuery = tagToQuery . const TG_rts_gc_stats
+
+gs_query :: (GCStats->Bool) -> LabeledQueries
+gs_query = genEOLabeledQueries QD_gc_stats
 
 
 ----------------------------------------------------------------------------------------------------
@@ -628,19 +665,25 @@ calc_output op = case op of
       where
         f v0 = case V.uncons v0 of
           Nothing        -> NoDatum
-          Just (bm,bm_v) -> flip Datum u $ agg (ext bm) $ V.toList $ V.map ext bm_v
+          Just (bm,bm_v) -> mk $ agg (ext bm) $ V.toList $ V.map ext bm_v
+            where
+              mk :: Double -> Datum
+              mk d = Datum d u $ V.length v0
 
     bm_external_seconds :: (Unit,Benchmark -> Double)
     bm_external_seconds = (U_GiBps,calc)
       where
         calc :: Benchmark -> Double
-        calc bm = gibps . (/1000) . fromIntegral . getMilisecondsReal . _bm_real $ bm
-          where
-            gibps :: Double -> Double
-            gibps secs = fromMaybe 0 (input_bytes bm) / (gibi*secs)
+        calc bm = gibps bm . (/1000) . fromIntegral . getMilisecondsReal . _bm_real $ bm
 
     bm_internal_seconds :: (Unit,Benchmark -> Double)
-    bm_internal_seconds = (U_GiBps,getSeconds . _bm_time)
+    bm_internal_seconds = (U_GiBps,calc)
+      where
+        calc :: Benchmark -> Double
+        calc bm = gibps bm . getSeconds . _bm_time $ bm
+
+    gibps :: Benchmark -> Double -> Double
+    gibps bm secs = fromMaybe 0 (input_bytes bm) / (gibi*secs)
 
     min_1 :: Double -> [Double] -> Double
     min_1 d ds = L.minimum $ d:ds

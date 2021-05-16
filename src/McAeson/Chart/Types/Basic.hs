@@ -69,19 +69,24 @@ newtype Javascript =
 
 data Datum
   = NoDatum
-  | Datum Double Unit
+  | Datum Double Unit Int
   deriving stock (Show)
 
 instance Buildable Datum where
   build = \case
-    NoDatum   -> "null"
-    Datum d _ -> fixedF 2 d
+    NoDatum     -> "null"
+    Datum d _ _ -> fixedF 3 d
 
 data Unit
-  = U_GiBps
+  = U_none
+  | U_GiBps
   | U_GiB
   | U_count
   deriving stock (Bounded, Enum, Eq, Ord, Show)
   deriving anyclass (EnumText)
   deriving (Buildable, TextParsable)
     via UsingEnumText Unit
+
+datumUnit :: Datum -> Maybe Unit
+datumUnit NoDatum       = Nothing
+datumUnit (Datum _ u _) = Just u

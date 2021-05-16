@@ -60,8 +60,8 @@ d3Data u mbu lns = (<>"          ];\n") $ mconcat $ zipWith d3d lns $ '[' : repe
             us'  -> error $ "d3Data: Line with multiple units: "+||us'||+"" -- TODO: test
           where
             f :: Datum -> Maybe Unit
-            f NoDatum      = Nothing
-            f (Datum _ u_) = Just u_
+            f NoDatum        = Nothing
+            f (Datum _ u_ _) = Just u_
 
     -- list enumerating units of yAxis1 and yAxis2 (if relevent), respectively
     us :: [Unit]
@@ -94,7 +94,7 @@ line_mul_t = Template [here|
           <<start-char>> { values      : <<data>>
             , key         : "<<label>>"
             , type        : "line"
-            , yaxis       : <<yaxis>>
+            , yAxis       : <<yaxis>>
             , strokeWidth : 3.5
             }
 |]

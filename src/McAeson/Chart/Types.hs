@@ -17,10 +17,13 @@ module McAeson.Chart.Types
   , module McAeson.Chart.Types.Chart
   -- testing
   , test
+  , dump_test
   ) where
 
 import           Data.Default
 import           Data.List                          as L
+import           Data.Maybe
+import           Data.Set(Set)
 import qualified Data.Set                           as Set
 import           Data.Text(Text)
 import qualified Data.Text                          as T
@@ -31,9 +34,11 @@ import           McAeson.Chart.Types.Basic
 import           McAeson.Chart.Types.Chart
 import           McAeson.Chart.Types.JSChart
 import           McAeson.Chart.Types.JSChart.NVD3
+import           McAeson.Chart.Types.MDTable
 import           McAeson.Chart.Types.WeekNo
 import           McAeson.Query
 import           System.Directory
+import           Text.Enum.Text
 
 
 ----------------------------------------------------------------------------------------------------
@@ -50,15 +55,22 @@ extract c = ChartData c <$> mapM gen_series (_lqs_queries _c_series)
   where
     gen_series :: LabeledQuery -> IO Series
     gen_series LabeledQuery{..} = do
-      case L.nub $ map outputUnit ops of
-        [u] -> Series u <$> mapM (gen_datum _lq_label _lq_query) (_lqs_queries _c_values)
-        _   -> fail $ "series "+|_lq_label|+" with conflicting outputs: "+|unwordsF ops|+""
-      where
-        ops = Set.toList $ getOutput _lq_query
+      ds <- mapM (gen_datum _lq_label _lq_query) (_lqs_queries _c_values)
+      case L.nub $ catMaybes $ map datumUnit ds of
+        []  -> return $ Series U_none ds
+        [u] -> return $ Series u      ds
+        us  -> fail $ "series "+|_lq_label|+" with no/conflicting units: "+|unwordsF us|+""
 
     gen_datum :: Text -> QueryDescriptor -> LabeledQuery -> IO Datum
-    gen_datum slab qd0 lq = do
-        d <- calcOutput OP_e_best_time <$> queryBenchmarksWith QS_explicit root q
+    gen_datum slab qd_s lq = do
+        -- dmp "universe" qd_u -- TODO
+        -- dmp "series  " qd_s
+        -- dmp "values  " qd_v
+        op <- case Set.toList $ getOutput qd of
+          []   -> fail $ "extract: no outputs: "+|qd|+""
+          [op] -> return op
+          ops  -> fail $ "extract: multiple outputs: "+|unwordsF ops|+""
+        d <- calcOutput op <$> queryBenchmarksWith QS_explicit root q
         fmtLn $
           ""   +|(padRightF 20 ' '   slab        )|+
           " "  +|(padRightF 20 ' ' $ _lq_label lq)|+
@@ -67,7 +79,24 @@ extract c = ChartData c <$> mapM gen_series (_lqs_queries _c_series)
           ""
         return d
       where
-        q = mkQuery $ qd0 <> _lq_query lq <> universe (_uni_queries _c_universe)
+        q :: Query
+        q  = mkQuery qd
+
+        qd, qd_v, qd_u :: QueryDescriptor
+        qd   = qd_u <> qd_s <> qd_v
+        qd_u = universe $ _uni_queries _c_universe
+        qd_v = _lq_query lq
+
+        -- TODO
+        -- dmp :: Builder -> QueryDescriptor -> IO ()
+        -- dmp lab qd_ = fmt $ unlinesF
+        --   [ "------------"
+        --   , lab
+        --   , "------------"
+        --   , build qd_
+        --   , "------------"
+        --   , ""
+        --   ]
 
     Chart{..} = c
 
@@ -99,7 +128,7 @@ write_report' ut h = wr =<< post_filepath ut
       , "subtl: "+|dy|+""
       , "issue: 2"
       , "---"
-      ,""
+      , ""
       ]
 
     wk = dayWeek dy
@@ -208,6 +237,7 @@ giga_dt_GiBps_universe =
       , _uni_queries = LabeledQueries "giga/dt" (Set.fromList [OP_e_best_time]) $ concat
           [ _lqs_queries $ me_query (==ME_dt)
           , _lqs_queries $ if_query (==IF_giga)
+          , _lqs_queries $ op_query (==OP_e_best_time)
           ]
       }
 
@@ -257,11 +287,122 @@ sc_giga_dt_GiBps_universe :: Universe
 sc_giga_dt_GiBps_universe =
     Universe
       { _uni_units   = [U_GiBps,U_GiB]
-      , _uni_queries = LabeledQueries "sc/giga/dt" (Set.fromList []) $ concat
-          [ _lqs_queries $ me_query (==ME_dt)
-          , _lqs_queries $ if_query (==IF_giga)
+      , _uni_queries = LabeledQueries "sc/giga/dt" (Set.fromList []) $ concatMap _lqs_queries
+          [ me_query (==ME_dt)
+          , fn_query (==FN_string_count)
+          , if_query (==IF_giga)
+          , gs_query $ const True
           ]
       }
+
+
+----------------------------------------------------------------------------------------------------
+-- dump_table
+----------------------------------------------------------------------------------------------------
+
+dump_test :: IO ()
+dump_test = dump_table test_multi_chart
+
+dump_table :: Chart -> IO ()
+dump_table c = fmt . dump_table' =<< extract c
+
+dump_table' :: ChartData -> Builder
+dump_table' ChartData{..} = unlinesF
+    [ "# "+|_c_heading|+""
+    , ""
+    , build $ getMarkdown _c_blurb
+    , ""
+    , bld_universe
+    , ""
+    ] <> markdownTable'' jf build gen [minBound..maxBound] rows
+  where
+    jf :: Col -> CJ
+    jf col = case col of
+      COL_series      -> LJust
+      COL_category    -> LJust
+      COL_value       -> RJust
+      COL_unit        -> LJust
+      COL_pop         -> RJust
+      COL_output      -> LJust
+      COL_query       -> LJust
+
+    rows :: [Row]
+    rows =
+      [ Row srs slq vlq d
+        | (srs,slq) <- zip _cd_data (_lqs_queries _c_series)
+        , let Series{..} = srs
+        , (d,vlq) <- zip _s_data (_lqs_queries _c_values)
+        ]
+
+    gen :: Col -> Row -> Builder
+    gen col = case col of
+      COL_series      -> bld_slb
+      COL_category    -> bld_vlb
+      COL_value       -> bld_val
+      COL_unit        -> bld_vlu
+      COL_pop         -> bld_pop
+      COL_output      -> bld_out
+      COL_query       -> bld_qry
+
+    bld_universe :: Builder
+    bld_universe = unlinesF
+        [ "universe : "+|_lqs_label _uni_queries|+" ["+|unwordsF _uni_units|+"]" :: Builder
+        , "  series : "+|_lqs_label _c_series|+""
+        , "  values : "+|_lqs_label _c_values|+""
+        ]
+      where
+        Universe{..} = _c_universe
+
+    bld_slb, bld_vlb, bld_val, bld_vlu, bld_pop, bld_out, bld_qry :: Row -> Builder
+
+    bld_slb Row{..} = ""+|_lq_label _row_series_lq|+" ("+|_s_unit _row_series|+")"
+    bld_vlb Row{..} = ""+|_lq_label _row_value_lq|+""
+    bld_val Row{..} = build _row_data
+    bld_vlu Row{..} = case _row_data of
+      NoDatum     -> "-"
+      Datum _ u _ -> build u
+    bld_pop Row{..} = case _row_data of
+      NoDatum     -> "-"
+      Datum _ _ p -> build p
+    bld_out Row{..} = build_s $ getOutput $ mk_qd Row{..}
+    bld_qry Row{..} = build   $ mkQuery   $ mk_qd Row{..}
+
+    mk_qd :: Row -> QueryDescriptor
+    mk_qd Row{..} = uni_qd<>srs_qd<>val_qd
+      where
+        srs_qd, val_qd :: QueryDescriptor
+        srs_qd = _lq_query _row_series_lq
+        val_qd = _lq_query _row_value_lq
+
+    uni_qd :: QueryDescriptor
+    uni_qd = mconcat $ map _lq_query $ _lqs_queries $ _uni_queries _c_universe
+
+    Chart{..} = _cd_chart
+
+    build_s :: Buildable a => Set a -> Builder
+    build_s = unwordsF . Set.toList
+
+data Row =
+  Row
+    { _row_series    :: Series
+    , _row_series_lq :: LabeledQuery
+    , _row_value_lq  :: LabeledQuery
+    , _row_data      :: Datum
+    }
+  deriving (Show)
+
+data Col
+  = COL_series
+  | COL_category
+  | COL_value
+  | COL_unit
+  | COL_pop
+  | COL_output
+  | COL_query
+  deriving stock (Bounded, Enum, Eq, Ord, Show)
+  deriving anyclass (EnumText)
+  deriving (Buildable, TextParsable)
+    via UsingEnumText Col
 
 
 ----------------------------------------------------------------------------------------------------
