@@ -34,7 +34,7 @@ import           McAeson.Chart.Types.Basic
 import           McAeson.Chart.Types.Chart
 import           McAeson.Chart.Types.JSChart
 import           McAeson.Chart.Types.JSChart.NVD3
-import           McAeson.Chart.Types.MDTable
+import           McAeson.Bench.MDTable
 import           McAeson.Chart.Types.WeekNo
 import           McAeson.Query
 import           System.Directory
