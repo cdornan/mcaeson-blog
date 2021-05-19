@@ -287,16 +287,7 @@ fn_query = genEOLabeledQueries QD_function
 
 instance IsLabeledQuery Algorithm where mkLabeledQueries = al_query
 
-data Algorithm
-  = AL_tyro
-  | AL_pheres
-  | AL_medea
-  | AL_aeson
-  | AL_jsonsimd
-  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
-  deriving anyclass (EnumText, HasQueryMethods)
-  deriving (Buildable, TextParsable)
-    via UsingEnumText Algorithm
+instance HasQueryMethods Algorithm
 
 instance IsBrief Algorithm where
   brief = fmt . build . al_to_tag
@@ -310,7 +301,7 @@ al_to_tag = \case
     AL_pheres   -> TG_ph
     AL_medea    -> TG_ma
     AL_aeson    -> TG_ae
-    AL_jsonsimd -> TG_js
+    AL_simdjson -> TG_js
 
 al_query :: (Algorithm->Bool) -> LabeledQueries
 al_query = genEOLabeledQueries QD_algorithm
